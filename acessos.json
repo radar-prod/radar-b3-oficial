@@ -26,5 +26,19 @@
     "liberado_em": "2025-08-24",
     "expira_em": "2025-09-23",
     "status": "ativo"
+  },
+  "oliveiradmso@gmail.com": {
+    "senha": "@David333",
+    "plano": "Diamante",
+    "liberado_em": "2025-08-25",
+    "expira_em": "2099-01-01",
+    "status": "ativo"
+  },
+  "kkk@kkk.com": {
+    "senha": "123456",
+    "plano": "Bronze",
+    "liberado_em": "2025-08-25",
+    "expira_em": "2025-09-24",
+    "status": "ativo"
   }
 }
