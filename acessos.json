@@ -1,0 +1,30 @@
+{
+  "lui@lui.com": {
+    "senha": "123456",
+    "plano": "Prata",
+    "liberado_em": "2025-08-24",
+    "expira_em": "2025-09-23",
+    "status": "ativo"
+  },
+  "brenda@brenda.com": {
+    "senha": "123456",
+    "plano": "Ouro",
+    "liberado_em": "2025-08-24",
+    "expira_em": "2025-09-23",
+    "status": "ativo"
+  },
+  "cat@cat.com": {
+    "senha": "123456",
+    "plano": "Diamante",
+    "liberado_em": "2025-08-24",
+    "expira_em": "2025-09-23",
+    "status": "ativo"
+  },
+  "dog@dog.com": {
+    "senha": "123456",
+    "plano": "Bronze",
+    "liberado_em": "2025-08-24",
+    "expira_em": "2025-09-23",
+    "status": "ativo"
+  }
+}
