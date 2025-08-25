@@ -40,5 +40,12 @@
     "liberado_em": "2025-08-25",
     "expira_em": "2025-09-24",
     "status": "ativo"
+  },
+  "fffff@gmail.com": {
+    "senha": "123456",
+    "plano": "Bronze",
+    "liberado_em": "2025-08-25",
+    "expira_em": "2025-09-09",
+    "status": "ativo"
   }
 }
