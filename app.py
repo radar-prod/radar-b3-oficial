@@ -1,6 +1,5 @@
 # app.py
 import streamlit as st
-import streamlit as st
 
 # ========================
 # CONFIGURAÇÃO INICIAL
@@ -1183,3 +1182,4 @@ if "email" in st.session_state and st.session_state.email:
 else:
     # A vitrine já foi exibida acima
     pass
+
