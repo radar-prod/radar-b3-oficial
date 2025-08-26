@@ -1,14 +1,35 @@
 # app.py
 import streamlit as st
-# ================
-# OCULTAR BOTOES PADRÃO DO STREAMLIT
-# ================
+import streamlit as st
+
+# ========================
+# CONFIGURAÇÃO INICIAL
+# ========================
+st.set_page_config(
+    page_title="Radar B3",
+    page_icon="🎯",
+    layout="wide",
+    initial_sidebar_state="auto",
+    menu_items=None,  # ✅ Remove os 3 pontinhos
+)
+
+# ========================
+# OCULTAR ELEMENTOS PADRÃO
+# ========================
 hide_streamlit_style = """
 <style>
-#MainMenu {visibility: hidden;}  /* Esconde menu superior */
-footer {visibility: hidden;}     /* Esconde rodapé */
-.stDeployButton {display: none;} /* Esconde botão "Deploy" */
-.viewerBadge_container {display: none !important;} /* Esconde selo do GitHub */
+/* Esconde o botão STOP e o header */
+header {visibility: hidden;}
+
+/* Esconde o rodapé */
+footer {visibility: hidden;}
+
+/* Esconde o menu de 3 pontinhos (backup) */
+#MainMenu {visibility: hidden;}
+
+/* Esconde o selo do GitHub no canto inferior */
+.viewerBadge_container {display: none !important;}
+.stDeployButton {display: none;}
 </style>
 """
 st.markdown(hide_streamlit_style, unsafe_allow_html=True)
@@ -1159,6 +1180,5 @@ def sistema_principal():
 if "email" in st.session_state and st.session_state.email:
     sistema_principal()
 else:
-    # A vitrine já foi exibida acima # Atualização forçada - 26/08 - David
+    # A vitrine já foi exibida acima
     pass
-
