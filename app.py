@@ -10,29 +10,30 @@ st.set_page_config(
     page_icon="🎯",
     layout="wide",
     initial_sidebar_state="auto",
-    menu_items=None,  # ✅ Remove os 3 pontinhos
+    menu_items=None  # ✅ Remove programaticamente os 3 pontinhos
 )
 
 # ========================
-# OCULTAR ELEMENTOS PADRÃO
+# OCULTAR ELEMENTOS
 # ========================
 hide_streamlit_style = """
 <style>
-/* Esconde o botão STOP e o header */
-header {visibility: hidden;}
+/* Esconde o header (botão STOP) */
+header {visibility: hidden !important;}
 
 /* Esconde o rodapé */
-footer {visibility: hidden;}
+footer {visibility: hidden !important;}
 
 /* Esconde o menu de 3 pontinhos (backup) */
-#MainMenu {visibility: hidden;}
+#MainMenu {display: none !important;}
 
-/* Esconde o selo do GitHub no canto inferior */
+/* Esconde selo do GitHub e botão Deploy */
 .viewerBadge_container {display: none !important;}
-.stDeployButton {display: none;}
+.stDeployButton {display: none !important;}
 </style>
 """
 st.markdown(hide_streamlit_style, unsafe_allow_html=True)
+
 import pandas as pd
 import numpy as np
 from datetime import datetime, time as time_obj, timedelta
