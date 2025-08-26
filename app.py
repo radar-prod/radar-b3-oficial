@@ -8,7 +8,7 @@ st.set_page_config(
     page_title="Radar B3",
     page_icon="🎯",
     layout="wide",
-    initial_sidebar_state="auto",
+    initial_sidebar_state="expanded",  # ✅ ALTERADO: sidebar sempre aberta
     menu_items=None  # ✅ Remove programaticamente os 3 pontinhos
 )
 
@@ -1182,4 +1182,3 @@ if "email" in st.session_state and st.session_state.email:
 else:
     # A vitrine já foi exibida acima
     pass
-
