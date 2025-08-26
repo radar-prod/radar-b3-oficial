@@ -1159,5 +1159,6 @@ def sistema_principal():
 if "email" in st.session_state and st.session_state.email:
     sistema_principal()
 else:
-    # A vitrine já foi exibida acima
+    # A vitrine já foi exibida acima # Atualização forçada - 26/08 - David
     pass
+
