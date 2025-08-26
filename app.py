@@ -1,5 +1,17 @@
 # app.py
 import streamlit as st
+# ================
+# OCULTAR BOTOES PADRÃO DO STREAMLIT
+# ================
+hide_streamlit_style = """
+<style>
+#MainMenu {visibility: hidden;}  /* Esconde menu superior */
+footer {visibility: hidden;}     /* Esconde rodapé */
+.stDeployButton {display: none;} /* Esconde botão "Deploy" */
+.viewerBadge_container {display: none !important;} /* Esconde selo do GitHub */
+</style>
+"""
+st.markdown(hide_streamlit_style, unsafe_allow_html=True)
 import pandas as pd
 import numpy as np
 from datetime import datetime, time as time_obj, timedelta
@@ -690,6 +702,30 @@ def sistema_principal():
     st.success("✅ Acesso liberado")
     st.write(f"📆 Expira em: **{st.session_state.expira.strftime('%d/%m/%Y')}**")
     st.markdown(f"Olá, **{st.session_state.email}**! Bem-vindo ao Radar B3.")
+    # 🔐 Botão para baixar pendentes.json (apenas para admin)
+    EMAIL_ADMIN = "oliveiradmso@gmail.com"  # 👈 Substitua por seu email de confiança
+
+    if st.session_state.email == EMAIL_ADMIN:
+        st.markdown("---")
+        st.markdown("### 🔐 Acesso do Administrador")
+
+        if st.button("📥 Baixar pendentes.json (para sincronizar com o gestor)"):
+            try:
+                with open("pendentes.json", "r", encoding="utf-8") as f:
+                    data = f.read()
+                st.download_button(
+                    label="⬇️ Clique para baixar o arquivo pendentes.json",
+                    data=data,
+                    file_name="pendentes.json",
+                    mime="application/json",
+                    key="download_pendentes"
+                )
+            except FileNotFoundError:
+                st.error("❌ Arquivo pendentes.json não encontrado no servidor.")
+            except Exception as e:
+                st.error(f"❌ Erro ao ler o arquivo: {e}")
+
+    # ✅ Agora usa os nomes amigáveis diretamente
 
     plano = st.session_state.plano
 
