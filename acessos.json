@@ -33,5 +33,19 @@
     "liberado_em": "2025-08-26",
     "expira_em": "2025-09-10",
     "status": "ativo"
+  },
+  "casa@casa.com": {
+    "senha": "123456",
+    "plano": "Bronze",
+    "liberado_em": "2025-08-26",
+    "expira_em": "2025-09-10",
+    "status": "ativo"
+  },
+  "goldebarriga10@gmail.com": {
+    "senha": "@Green2001",
+    "plano": "Bronze",
+    "liberado_em": "2025-08-26",
+    "expira_em": "2025-09-10",
+    "status": "ativo"
   }
 }
