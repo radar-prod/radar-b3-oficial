@@ -1,0 +1,9 @@
+[server]
+headless = true
+enableCORS = false
+enableXsrfProtection = true
+
+[client]
+toolbarMode = "none"
+menuMode = "none"
+showSidebarNavigation = false
