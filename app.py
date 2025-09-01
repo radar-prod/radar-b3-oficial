@@ -1,23 +1,14 @@
-# app.py
 import streamlit as st
 
-# ========================
-# CONFIGURAÇÃO INICIAL
-# ========================
 st.set_page_config(
     page_title="Radar B3",
     page_icon="🎯",
     layout="wide",
     initial_sidebar_state="expanded",
-    menu_items=None
 )
 
-# ========================
-# OCULTAR ELEMENTOS DO STREAMLIT (com força total)
-# ========================
 hide_streamlit_elements = """
 <style>
-/* Esconde header completo (3 pontinhos, setas, etc.) */
 #MainMenu, header, .viewerBadge, .stDeployButton, 
 footer, .stApp [data-testid="stToolbar"] {
     visibility: hidden !important;
@@ -27,30 +18,20 @@ footer, .stApp [data-testid="stToolbar"] {
     display: none !important;
     opacity: 0 !important;
 }
-/* Previne o flash da toolbar durante o carregamento */
 body, .stApp {
     margin-top: 0px !important;
     padding-top: 0px !important;
 }
-/* Remove qualquer vestígio de menu ou botão */
 button[kind="headerButton"] {
-    display: none !important;
-}
-/* Esconde o spinner de carregamento do Streamlit */
-#root > div:nth-child(1) > div > div > div > div > section > div {
     display: none !important;
 }
 </style>
 """
 st.markdown(hide_streamlit_elements, unsafe_allow_html=True)
 
-import pandas as pd
-import numpy as np
-from datetime import datetime, time as time_obj, timedelta
-import yfinance as yf
-from concurrent.futures import ThreadPoolExecutor, as_completed
-import json
-import os
+# --- CONTEÚDO PRINCIPAL ---
+st.title("📊 Radar B3")
+st.write("Bem-vindo ao Radar B3! Sua aplicação está funcionando 🚀")
 
 # ========================
 # ARQUIVOS DE CONTROLE
