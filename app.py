@@ -1,12 +1,29 @@
+# ========================
+# IMPORTS
+# ========================
 import streamlit as st
+import pandas as pd
+import numpy as np
+from datetime import datetime, time as time_obj, timedelta
+import yfinance as yf
+from concurrent.futures import ThreadPoolExecutor, as_completed
+import json
+import os
 
+# ========================
+# CONFIGURAÇÃO INICIAL
+# ========================
 st.set_page_config(
     page_title="Radar B3",
     page_icon="🎯",
     layout="wide",
     initial_sidebar_state="expanded",
+    menu_items=None
 )
 
+# ========================
+# CSS (corrigido: não esconde o corpo principal)
+# ========================
 hide_streamlit_elements = """
 <style>
 #MainMenu, header, .viewerBadge, .stDeployButton, 
@@ -29,9 +46,11 @@ button[kind="headerButton"] {
 """
 st.markdown(hide_streamlit_elements, unsafe_allow_html=True)
 
-# --- CONTEÚDO PRINCIPAL ---
+# ========================
+# CONTEÚDO PRINCIPAL
+# ========================
 st.title("📊 Radar B3")
-st.write("Bem-vindo ao Radar B3! Sua aplicação está funcionando 🚀")
+st.write("Bem-vindo ao Radar B3! 🚀")
 
 # ========================
 # ARQUIVOS DE CONTROLE
