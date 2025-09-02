@@ -190,9 +190,8 @@ css_titulo_vitrine = """
 """
 st.markdown(css_titulo_vitrine, unsafe_allow_html=True)
 
-
 # ========================
-# CONTEÚDO PRINCIPAL MOBILE
+# CSS: VITRINE PRIMEIRO, SIDEBAR DEPOIS (SEM SOBREPOSIÇÃO NO CELULAR)
 # ========================
 mobile_order_css = """
 <style>
@@ -205,25 +204,22 @@ mobile_order_css = """
     /* Conteúdo principal primeiro */
     .stMain {
         order: 1 !important;
-        margin: 0 !important;
+        margin-left: 0 !important;
         padding: 10px !important;
         width: 100% !important;
     }
-    /* Sidebar depois, sem sobreposição */
+    /* Sidebar depois, ocupando 100% da largura */
     .stSidebar {
         order: 2 !important;
-        position: relative !important;   /* força relativo */
-        left: 0 !important;              /* zera posição */
-        top: auto !important;
-        width: 100% !important;          /* ocupa largura toda */
+        position: relative !important;
+        width: 100% !important;
         height: auto !important;
         margin: 0 !important;
         padding: 15px !important;
         border: none !important;
         border-top: 1px solid #ddd !important;
         box-shadow: none !important;
-        z-index: 1 !important;
-        background-color: #f8f9fa !important;
+        z-index: auto !important;
     }
     /* Remove cabeçalho da sidebar */
     .stSidebar [data-testid="stSidebarHeader"] {
@@ -233,7 +229,6 @@ mobile_order_css = """
 </style>
 """
 st.markdown(mobile_order_css, unsafe_allow_html=True)
-
 
 # ========================
 # CONTEÚDO PRINCIPAL
