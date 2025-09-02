@@ -47,6 +47,216 @@ button[kind="headerButton"] {
 st.markdown(hide_streamlit_elements, unsafe_allow_html=True)
 
 # ========================
+# CSS: ESCONDER BOTÃO DE FECHAR DA SIDEBAR (não permite fechar)
+# ========================
+hide_sidebar_collapse = """
+<style>
+/* Esconde o botão de fechar/expandir da sidebar */
+.stSidebar [data-testid="stSidebarHeader"] {
+    display: none !important;
+}
+/* Garante que a sidebar sempre apareça */
+.stSidebar {
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    width: 280px !important;
+    height: 100vh !important;
+    z-index: 999990 !important;
+    background-color: #f8f9fa;
+    padding: 20px 10px;
+    border-right: 1px solid #e0e0e0;
+}
+/* Ajusta o conteúdo principal */
+.stMain {
+    margin-left: 300px;
+    padding: 20px;
+}
+</style>
+"""
+st.markdown(hide_sidebar_collapse, unsafe_allow_html=True)
+
+# ========================
+# CSS: NIVELAR VITRINE COM O TOPO DA SIDEBAR
+# ========================
+align_content_css = """
+<style>
+/* Remove o padding/margin inicial do conteúdo principal */
+.stMain > div:first-child {
+    margin-top: 0px !important;
+    padding-top: 0px !important;
+}
+/* Garante que o primeiro container da vitrine encoste no topo */
+.stMain > div:first-child > div {
+    margin-top: -20px !important;
+    padding-top: 0px !important;
+}
+/* Ajuste fino: remove espaçamento extra causado pelo Streamlit */
+.reportview-container .main .block-container {
+    padding-top: 0rem !important;
+    margin-top: 0rem !important;
+}
+/* Alinha o conteúdo principal com o topo da sidebar */
+.stApp {
+    overflow: visible;
+}
+</style>
+"""
+st.markdown(align_content_css, unsafe_allow_html=True)
+
+# ========================
+# CSS: AJUSTAR ALINHAMENTO DA VITRINE (mais à esquerda)
+# ========================
+align_vitrine_css = """
+<style>
+/* Aproxima a vitrine da barra lateral */
+.stMain > div:first-child {
+    margin-left: 20px;
+    padding-left: 0;
+}
+/* Ajusta o título da vitrine */
+h1, h2, h3 {
+    margin-left: 0;
+    padding-left: 0;
+}
+/* Em telas grandes, alinha melhor com a sidebar */
+@media (min-width: 1024px) {
+    .stMain > div:first-child {
+        margin-left: 40px;
+    }
+}
+</style>
+"""
+st.markdown(align_vitrine_css, unsafe_allow_html=True)
+
+# ========================
+# CSS: DESCER CONTEÚDO DA SIDEBAR (mais espaço no topo)
+# ========================
+padding_sidebar_css = """
+<style>
+/* Aumenta o padding no topo da sidebar para descer o conteúdo */
+.stSidebar > div:first-child {
+    padding-top: 50px !important;
+}
+/* Ajuste fino: evita outros espaçamentos indesejados */
+.stSidebar > div:first-child > div {
+    padding-top: 0 !important;
+}
+/* Opcional: adiciona um pequeno espaçamento interno */
+.stSidebar {
+    padding-top: 65px;
+}
+</style>
+"""
+st.markdown(padding_sidebar_css, unsafe_allow_html=True)
+
+# ========================
+# CSS: AJUSTE FINO DO TEXTO DA VITRINE (com controle em px)
+# ========================
+adjustable_vitrine_text_css = """
+<style>
+/* Ajuste fino do texto da vitrine com controle em px */
+.stMain > div:first-child h1,
+.stMain > div:first-child p {
+    text-align: left !important;
+    margin-left: 10px !important;  /* AJUSTE ESSE VALOR */
+    padding-left: 0 !important;
+}
+/* Ajuste fino do container */
+.stMain > div:first-child > div {
+    margin-left: 0 !important;
+    padding-left: 0 !important;
+}
+</style>
+"""
+st.markdown(adjustable_vitrine_text_css, unsafe_allow_html=True)
+
+# ========================
+# CSS: ALINHAR SÓ O TÍTULO DA VITRINE (sem afetar outros h1)
+# ========================
+css_titulo_vitrine = """
+<style>
+/* Apenas o h1 dentro da classe .titulo-vitrine é afetado */
+.titulo-vitrine h1 {
+    text-align: left !important;
+    margin-left: 100px !important;
+    padding-left: 0 !important;
+}
+/* Garante que outros h1 (como no sistema) não são afetados */
+.titulo-vitrine {
+    width: 100%;
+}
+</style>
+"""
+st.markdown(css_titulo_vitrine, unsafe_allow_html=True)
+
+# ========================
+# CSS: OTIMIZAÇÃO PARA CELULAR
+# ========================
+mobile_css = """
+<style>
+@media (max-width: 768px) {
+    /* Reorganiza a ordem: vitrine primeiro, depois sidebar */
+    .stApp {
+        display: flex;
+        flex-direction: column;
+    }
+    /* Conteúdo principal (vitrine ou sistema) */
+    .stMain {
+        order: 1;
+        margin-left: 0 !important;
+        padding: 10px !important;
+    }
+    /* Barra lateral (login) */
+    .stSidebar {
+        order: 2;
+        position: static !important;
+        width: 100% !important;
+        height: auto !important;
+        padding: 15px !important;
+        margin-top: 0 !important;
+        border-right: none !important;
+        border-bottom: 1px solid #e0e0e0 !important;
+    }
+    /* Título da sidebar */
+    .stSidebar::before {
+        content: "🔐 Acesso Exclusivo";
+        font-weight: bold;
+        color: #1f618d;
+        font-size: 1.2em;
+        margin-bottom: 10px;
+        display: block;
+        text-align: center;
+    }
+    /* Ajusta títulos */
+    h1, h2, h3 {
+        font-size: 1.4em !important;
+        text-align: left !important;
+    }
+    /* Ajusta botões */
+    .stButton > button {
+        height: 3em !important;
+        font-size: 1em !important;
+        width: 100% !important;
+    }
+    /* Ajusta expander */
+    .streamlit-expanderHeader {
+        font-size: 1em !important;
+    }
+    /* Ajusta tabelas */
+    .stDataFrame {
+        font-size: 0.9em !important;
+    }
+    /* Remove padding excessivo */
+    .block-container {
+        padding: 1rem !important;
+    }
+}
+</style>
+"""
+st.markdown(mobile_css, unsafe_allow_html=True)
+
+# ========================
 # CONTEÚDO PRINCIPAL
 # ========================
 st.title("📊 Radar B3")
@@ -194,7 +404,11 @@ if "solicita_acesso" in st.session_state and st.session_state.solicita_acesso:
 if "email" in st.session_state and st.session_state.email:
     pass
 else:
-    st.markdown("<h1 style='text-align: center;'>🎯 Radar B3 Online</h1>", unsafe_allow_html=True)
+    st.markdown("""
+<div class="titulo-vitrine">
+    <h1>🎯 Radar B3 Online</h1>
+</div>
+""", unsafe_allow_html=True)
     st.markdown("<p style='text-align: center; font-size: 1.2em; font-weight: bold; color: #2c3e50;'>"
                 "Padrões ocultos, resultados visíveis: a abordagem matemática para operações lucrativas"
                 "</p>", unsafe_allow_html=True)
