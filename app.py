@@ -190,6 +190,10 @@ css_titulo_vitrine = """
 """
 st.markdown(css_titulo_vitrine, unsafe_allow_html=True)
 
+
+# ========================
+# CONTEÚDO PRINCIPAL MOBILE
+# ========================
 mobile_order_css = """
 <style>
 @media (max-width: 768px) {
@@ -205,20 +209,20 @@ mobile_order_css = """
         padding: 10px !important;
         width: 100% !important;
     }
-    /* Sidebar depois, embaixo, sem sobreposição */
+    /* Sidebar depois, sem sobreposição */
     .stSidebar {
         order: 2 !important;
-        position: relative !important;   /* <<< tira o fixed */
-        left: auto !important;           /* <<< reseta o left */
-        top: auto !important;            /* <<< reseta o top */
-        width: 100% !important;          /* <<< sidebar ocupa toda a largura */
+        position: relative !important;   /* força relativo */
+        left: 0 !important;              /* zera posição */
+        top: auto !important;
+        width: 100% !important;          /* ocupa largura toda */
         height: auto !important;
         margin: 0 !important;
         padding: 15px !important;
         border: none !important;
         border-top: 1px solid #ddd !important;
         box-shadow: none !important;
-        z-index: auto !important;
+        z-index: 1 !important;
         background-color: #f8f9fa !important;
     }
     /* Remove cabeçalho da sidebar */
@@ -229,6 +233,7 @@ mobile_order_css = """
 </style>
 """
 st.markdown(mobile_order_css, unsafe_allow_html=True)
+
 
 # ========================
 # CONTEÚDO PRINCIPAL
