@@ -47,5 +47,12 @@
     "liberado_em": "2025-08-26",
     "expira_em": "2025-09-10",
     "status": "ativo"
+  },
+  "samuel@teste.com": {
+    "senha": "123456",
+    "plano": "Bronze",
+    "liberado_em": "2025-09-03",
+    "expira_em": "2025-09-18",
+    "status": "ativo"
   }
 }
