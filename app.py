@@ -22,7 +22,7 @@ st.set_page_config(
 )
 
 # ========================
-# CSS (corrigido: não esconde o corpo principal)
+# CSS: OCULTAR ELEMENTOS DO STREAMLIT
 # ========================
 hide_streamlit_elements = """
 <style>
@@ -39,196 +39,9 @@ body, .stApp {
     margin-top: 0px !important;
     padding-top: 0px !important;
 }
-button[kind="headerButton"] {
-    display: none !important;
-}
 </style>
 """
 st.markdown(hide_streamlit_elements, unsafe_allow_html=True)
-
-# ========================
-# CSS: ESCONDER BOTÃO DE FECHAR DA SIDEBAR (não permite fechar)
-# ========================
-hide_sidebar_collapse = """
-<style>
-/* Esconde o botão de fechar/expandir da sidebar */
-.stSidebar [data-testid="stSidebarHeader"] {
-    display: none !important;
-}
-/* Garante que a sidebar sempre apareça */
-.stSidebar {
-    position: fixed !important;
-    top: 0 !important;
-    left: 0 !important;
-    width: 280px !important;
-    height: 100vh !important;
-    z-index: 999990 !important;
-    background-color: #f8f9fa;
-    padding: 20px 10px;
-    border-right: 1px solid #e0e0e0;
-}
-/* Ajusta o conteúdo principal */
-.stMain {
-    margin-left: 300px;
-    padding: 20px;
-}
-</style>
-"""
-st.markdown(hide_sidebar_collapse, unsafe_allow_html=True)
-
-# ========================
-# CSS: NIVELAR VITRINE COM O TOPO DA SIDEBAR
-# ========================
-align_content_css = """
-<style>
-/* Remove o padding/margin inicial do conteúdo principal */
-.stMain > div:first-child {
-    margin-top: 0px !important;
-    padding-top: 0px !important;
-}
-/* Garante que o primeiro container da vitrine encoste no topo */
-.stMain > div:first-child > div {
-    margin-top: -20px !important;
-    padding-top: 0px !important;
-}
-/* Ajuste fino: remove espaçamento extra causado pelo Streamlit */
-.reportview-container .main .block-container {
-    padding-top: 0rem !important;
-    margin-top: 0rem !important;
-}
-/* Alinha o conteúdo principal com o topo da sidebar */
-.stApp {
-    overflow: visible;
-}
-</style>
-"""
-st.markdown(align_content_css, unsafe_allow_html=True)
-
-# ========================
-# CSS: AJUSTAR ALINHAMENTO DA VITRINE (mais à esquerda)
-# ========================
-align_vitrine_css = """
-<style>
-/* Aproxima a vitrine da barra lateral */
-.stMain > div:first-child {
-    margin-left: 20px;
-    padding-left: 0;
-}
-/* Ajusta o título da vitrine */
-h1, h2, h3 {
-    margin-left: 0;
-    padding-left: 0;
-}
-/* Em telas grandes, alinha melhor com a sidebar */
-@media (min-width: 1024px) {
-    .stMain > div:first-child {
-        margin-left: 40px;
-    }
-}
-</style>
-"""
-st.markdown(align_vitrine_css, unsafe_allow_html=True)
-
-# ========================
-# CSS: DESCER CONTEÚDO DA SIDEBAR (mais espaço no topo)
-# ========================
-padding_sidebar_css = """
-<style>
-/* Aumenta o padding no topo da sidebar para descer o conteúdo */
-.stSidebar > div:first-child {
-    padding-top: 50px !important;
-}
-/* Ajuste fino: evita outros espaçamentos indesejados */
-.stSidebar > div:first-child > div {
-    padding-top: 0 !important;
-}
-/* Opcional: adiciona um pequeno espaçamento interno */
-.stSidebar {
-    padding-top: 65px;
-}
-</style>
-"""
-st.markdown(padding_sidebar_css, unsafe_allow_html=True)
-
-# ========================
-# CSS: AJUSTE FINO DO TEXTO DA VITRINE (com controle em px)
-# ========================
-adjustable_vitrine_text_css = """
-<style>
-/* Ajuste fino do texto da vitrine com controle em px */
-.stMain > div:first-child h1,
-.stMain > div:first-child p {
-    text-align: left !important;
-    margin-left: 10px !important;  /* AJUSTE ESSE VALOR */
-    padding-left: 0 !important;
-}
-/* Ajuste fino do container */
-.stMain > div:first-child > div {
-    margin-left: 0 !important;
-    padding-left: 0 !important;
-}
-</style>
-"""
-st.markdown(adjustable_vitrine_text_css, unsafe_allow_html=True)
-
-# ========================
-# CSS: ALINHAR SÓ O TÍTULO DA VITRINE (sem afetar outros h1)
-# ========================
-css_titulo_vitrine = """
-<style>
-/* Apenas o h1 dentro da classe .titulo-vitrine é afetado */
-.titulo-vitrine h1 {
-    text-align: left !important;
-    margin-left: 100px !important;
-    padding-left: 0 !important;
-}
-/* Garante que outros h1 (como no sistema) não são afetados */
-.titulo-vitrine {
-    width: 100%;
-}
-</style>
-"""
-st.markdown(css_titulo_vitrine, unsafe_allow_html=True)
-
-# ========================
-# CSS: VITRINE PRIMEIRO, SIDEBAR DEPOIS (SEM SOBREPOSIÇÃO NO CELULAR)
-# ========================
-mobile_order_css = """
-<style>
-@media (max-width: 768px) {
-    /* Força layout em coluna */
-    .stApp {
-        display: flex !important;
-        flex-direction: column !important;
-    }
-    /* Conteúdo principal primeiro */
-    .stMain {
-        order: 1 !important;
-        margin-left: 0 !important;
-        padding: 10px !important;
-        width: 100% !important;
-    }
-    /* Sidebar depois, ocupando 100% da largura */
-    .stSidebar {
-        order: 2 !important;
-        position: relative !important;
-        width: 100% !important;
-        height: auto !important;
-        margin: 0 !important;
-        padding: 15px !important;
-        border: none !important;
-        border-top: 1px solid #ddd !important;
-        box-shadow: none !important;
-        z-index: auto !important;
-    }
-    /* Remove cabeçalho da sidebar */
-    .stSidebar [data-testid="stSidebarHeader"] {
-        display: none !important;
-    }
-}
-</style>
-"""
-st.markdown(mobile_order_css, unsafe_allow_html=True)
 
 # ========================
 # CONTEÚDO PRINCIPAL
@@ -255,6 +68,18 @@ def carregar_acessos():
             st.error("⚠️ Arquivo corrompido. Criando novo.")
             return {}
     return {}
+
+def obter_plano(email):
+    acessos = carregar_acessos()
+    return acessos.get(email, {}).get("plano", "Bronze")
+
+def obter_expiracao(email):
+    acessos = carregar_acessos()
+    expira_str = acessos.get(email, {}).get("expira_em", "")
+    try:
+        return datetime.strptime(expira_str, "%Y-%m-%d").date()
+    except:
+        return datetime.now().date()
 
 def verificar_acesso(email, senha):
     acessos = carregar_acessos()
@@ -293,110 +118,61 @@ def carregar_pendentes():
     return []
 
 # ========================
-# BARRA LATERAL (LOGIN E ACESSO)
-# ========================
-with st.sidebar:
-    st.markdown("### 🔐 Acesso Exclusivo")
-    email_input = st.text_input("📧 Email", key="sidebar_email")
-    senha_input = st.text_input("🔑 Senha", type="password", key="sidebar_senha")
-
-    if st.button("Entrar"):
-        if verificar_acesso(email_input, senha_input):
-            st.success("✅ Login realizado!")
-            st.rerun()
-        else:
-            st.error("❌ Email ou senha inválidos")
-
-    st.markdown("---")
-    st.markdown("### 🆓 Quer testar grátis?")
-    if st.button("Solicitar Acesso (15 dias)"):
-        st.session_state.solicita_acesso = True
-        st.rerun()
-
-    st.markdown("---")
-    st.caption("🔐 Sistema seguro. Acesso por liberação.")
-
-# ========================
-# TELA DE SOLICITAÇÃO DE ACESSO
-# ========================
-if "solicita_acesso" in st.session_state and st.session_state.solicita_acesso:
-    st.markdown("<h1 style='text-align: center;'>🔓 Acesso Grátis por 15 Dias</h1>", unsafe_allow_html=True)
-    st.markdown("<p style='text-align: center;'>Preencha seus dados abaixo e comece a usar o <strong>Radar B3</strong> imediatamente.</p>", unsafe_allow_html=True)
-    st.markdown("---")
-
-    st.markdown("### 🔐 Crie seu acesso agora")
-    email = st.text_input("📧 Email", key="cadastro_email")
-    senha = st.text_input("🔑 Senha", type="password", key="cadastro_senha")
-    confirma_senha = st.text_input("🔁 Confirmar Senha", type="password", key="cadastro_confirma")
-
-    plano_interesse = st.selectbox(
-        "🎯 Plano de interesse após o teste",
-        ["Prata", "Ouro", "Diamante"]
-    )
-
-    if st.button("✅ Criar Acesso"):
-        if not email or "@" not in email:
-            st.error("❌ Email inválido")
-        elif not senha:
-            st.error("❌ Senha obrigatória")
-        elif senha != confirma_senha:
-            st.error("❌ As senhas não conferem")
-        else:
-            pendentes = carregar_pendentes()
-            pendentes.append({
-                "email": email,
-                "senha": senha,
-                "plano_interesse": plano_interesse,
-                "data": datetime.now().strftime("%Y-%m-%d"),
-                "status": "pendente",
-                "dias": 15
-            })
-            salvar_pendentes(pendentes)
-
-            st.success(f"✅ Seu acesso foi solicitado com sucesso!")
-            st.success(f"🔑 Email: {email}")
-            st.info("🔍 O gestor analisará e liberará seu acesso em até 12h. Após isso, você poderá entrar com seu email e senha.")
-
-    if st.button("⬅️ Voltar à página inicial"):
-        del st.session_state.solicita_acesso
-        st.rerun()
-
-    st.markdown("### ❓ Como funciona?")
-    st.write("""
-    1. Você escolhe um email e senha  
-    2. Enviamos para análise  
-    3. O gestor libera seu acesso por 15 dias  
-    4. Você entra no sistema com suas credenciais  
-    5. Após 15 dias, pode renovar ou atualizar para um plano pago
-    """)
-
-    st.stop()
-
-# ========================
-# PÁGINA INICIAL (VITRINE)
+# PÁGINA INICIAL (VITRINE PROFISSIONAL)
 # ========================
 if "email" in st.session_state and st.session_state.email:
     pass
 else:
-    st.markdown("""
-<div class="titulo-vitrine">
-    <h1>🎯 Radar B3 Online</h1>
-</div>
-""", unsafe_allow_html=True)
-    st.markdown("<p style='text-align: center; font-size: 1.2em; font-weight: bold; color: #2c3e50;'>"
+    # Título principal
+    st.markdown("<h1 style='text-align: center; color: #1f618d;'>🎯 Radar B3 Online</h1>", unsafe_allow_html=True)
+    st.markdown("<p style='text-align: center; font-size: 1.2em; color: #2c3e50; font-weight: bold;'>"
                 "Padrões ocultos, resultados visíveis: a abordagem matemática para operações lucrativas"
                 "</p>", unsafe_allow_html=True)
-    st.markdown("---")
+    st.markdown("<hr style='border: 1px solid #e0e0e0;'>", unsafe_allow_html=True)
 
+    # Seção: Por que o Radar B3?
     st.markdown("### 🚀 Por que o Radar B3 faz a diferença?")
-    st.write("""
+    st.markdown("""
     O Radar B3 não é mais um sistema de sinais. É uma **ferramenta estatística avançada** que identifica:
     - Distorções de preço com alta probabilidade de reversão ou continuidade.
     - Padrões de abertura e fechamento com taxa de acerto acima de 70%
     - Oportunidades em ações, mini-índice e mini-dólar
     """)
 
-    if st.button("📊 Saiba Mais sobre o Sistema"):
+    # Botões principais
+    col1, col2 = st.columns([1, 1], gap="large")
+    with col1:
+        if st.button("🔐 Acessar Sistema", key="btn_acessar_sistema"):
+            st.session_state.mostrar_login = True
+    with col2:
+        if st.button("🆓 Testar Grátis (15 dias)", key="btn_testar_gratis"):
+            st.session_state.solicita_acesso = True
+
+    # Formulário de login (aparece só se clicar em "Acessar Sistema")
+    if "mostrar_login" in st.session_state and st.session_state.mostrar_login:
+        st.markdown("<hr style='border: 1px dashed #3498db;'>", unsafe_allow_html=True)
+        st.markdown("### 🔐 Faça seu login")
+        email_input = st.text_input("📧 Email", key="modal_email")
+        senha_input = st.text_input("🔑 Senha", type="password", key="modal_senha")
+        if st.button("🔓 Entrar", key="btn_entrar_modal"):
+            if verificar_acesso(email_input, senha_input):
+                st.session_state.email = email_input
+                st.session_state.plano = obter_plano(email_input)
+                st.session_state.expira = obter_expiracao(email_input)
+                # Limpa o estado do modal
+                if "mostrar_login" in st.session_state:
+                    del st.session_state.mostrar_login
+                st.rerun()
+            else:
+                st.error("❌ Email ou senha incorretos")
+        if st.button("❌ Fechar", key="btn_fechar_login"):
+            del st.session_state.mostrar_login
+            st.rerun()
+
+    st.markdown("<br><br>", unsafe_allow_html=True)
+    
+    # Saiba Mais
+    if st.button("📊 Saiba Mais sobre o Sistema", key="btn_saiba_mais_vitrine"):
         with st.expander("🔍 Como o Radar B3 Funciona", expanded=True):
             st.markdown("""
             O Radar B3 analisa milhares de candles diários e de 5min para identificar:
@@ -416,7 +192,8 @@ else:
             Nota: Resultados Passados não garantem resultados futuros                     
             """)
 
-    if st.button("📋 Planos Disponíveis"):
+    # Planos Disponíveis
+    if st.button("📋 Planos Disponíveis", key="btn_planos_vitrine"):
         with st.expander("💎 Planos Disponíveis", expanded=True):
             st.markdown("""
             | Recurso | Plano Bronze | Plano Prata | Plano Ouro | Plano Diamante |
@@ -442,8 +219,251 @@ else:
             """)
 
     st.markdown("<br><br>", unsafe_allow_html=True)
+    st.markdown("<hr style='border: 1px solid #e0e0e0;'>", unsafe_allow_html=True)
+    st.caption("💡 Dica: Use os botões acima para acessar ou testar o sistema.")
+
+# ========================
+# TELA DE SOLICITAÇÃO DE ACESSO
+# ========================
+if "solicita_acesso" in st.session_state and st.session_state.solicita_acesso:
+    st.markdown("<h1 style='text-align: center;'>🔓 Acesso Grátis por 15 Dias</h1>", unsafe_allow_html=True)
+    st.markdown("<p style='text-align: center;'>Preencha seus dados abaixo e comece a usar o <strong>Radar B3</strong> imediatamente.</p>", unsafe_allow_html=True)
     st.markdown("---")
-    st.caption("💡 Dica: Use o menu lateral para fazer login ou solicitar acesso grátis.")
+
+    st.markdown("### 🔐 Crie seu acesso agora")
+    email = st.text_input("📧 Email", key="cadastro_email")
+    senha = st.text_input("🔑 Senha", type="password", key="cadastro_senha")
+    confirma_senha = st.text_input("🔁 Confirmar Senha", type="password", key="cadastro_confirma")
+
+    plano_interesse = st.selectbox(
+        "🎯 Plano de interesse após o teste",
+        ["Prata", "Ouro", "Diamante"]
+    )
+
+    if st.button("✅ Criar Acesso", key="btn_criar_acesso"):
+        if not email or "@" not in email:
+            st.error("❌ Email inválido")
+        elif not senha:
+            st.error("❌ Senha obrigatória")
+        elif senha != confirma_senha:
+            st.error("❌ As senhas não conferem")
+        else:
+            pendentes = carregar_pendentes()
+            pendentes.append({
+                "email": email,
+                "senha": senha,
+                "plano_interesse": plano_interesse,
+                "data": datetime.now().strftime("%Y-%m-%d"),
+                "status": "pendente",
+                "dias": 15
+            })
+            salvar_pendentes(pendentes)
+
+            st.success(f"✅ Seu acesso foi solicitado com sucesso!")
+            st.success(f"🔑 Email: {email}")
+            st.info("🔍 O gestor analisará e liberará seu acesso em até 12h. Após isso, você poderá entrar com seu email e senha.")
+
+    if st.button("⬅️ Voltar à página inicial", key="btn_voltar_vitrine"):
+        del st.session_state.solicita_acesso
+        st.rerun()
+
+    st.markdown("### ❓ Como funciona?")
+    st.write("""
+    1. Você escolhe um email e senha  
+    2. Enviamos para análise  
+    3. O gestor libera seu acesso por 15 dias  
+    4. Você entra no sistema com suas credenciais  
+    5. Após 15 dias, pode renovar ou atualizar para um plano pago
+    """)
+
+    st.stop()
+
+# ========================
+# FUNÇÕES AUXILIARES
+# ========================
+def extrair_nome_completo(file_name):
+    return file_name.split(".")[0]
+
+def identificar_tipo(ticker):
+    ticker = ticker.upper().strip()
+    if '.' in ticker:
+        ticker = ticker.split('.')[0]
+    prefixos = ['5-MIN_', '5_MIN_', 'MINI_', 'MIN_', 'INTRADAY_', 'INTRADAY']
+    for p in prefixos:
+        if ticker.startswith(p):
+            ticker = ticker[len(p):]
+    if 'WIN' in ticker or 'INDICE' in ticker:
+        return 'mini_indice'
+    if 'WDO' in ticker or 'DOLAR' in ticker or 'DOL' in ticker:
+        return 'mini_dolar'
+    acoes = ['PETR', 'VALE', 'ITUB', 'BBDC', 'BEEF', 'ABEV', 'ITSA', 'JBSS', 'RADL', 'CIEL',
+             'GOLL', 'AZUL', 'BBAS', 'SANB', 'ASAI', 'B3SA', 'MGLU', 'CVCB', 'IRBR', 'XP', 'LCAM']
+    for acao in acoes:
+        if acao in ticker:
+            return 'acoes'
+    return 'acoes'
+
+# ========================
+# ✅ FUNÇÃO CORRIGIDA: Verificar lacunas (com identificar_tipo)
+# ========================
+def verificar_lacunas(uploaded_files, abertura_acoes, fechamento_acoes, abertura_mini, fechamento_mini):
+    with st.expander("🔍 Validação de Dados: Status por Arquivo"):
+        st.markdown("### 📂 Resumo de Integridade dos Arquivos")
+        total_analisados = 0
+        total_com_lacuna = 0
+        total_erro = 0
+        for file in uploaded_files:
+            try:
+                # ✅ Ler todas as abas até encontrar 'Data'
+                excel = pd.ExcelFile(file)
+                df = None
+                for sheet in excel.sheet_names:
+                    try:
+                        temp_df = pd.read_excel(excel, sheet_name=sheet)
+                        if not temp_df.empty and 'Data' in temp_df.columns:
+                            df = temp_df
+                            break
+                    except:
+                        continue
+                if df is None:
+                    st.markdown(f"❌ **{file.name}** → ❌ Nenhuma aba com coluna 'Data' encontrada")
+                    total_erro += 1
+                    continue
+                if 'Data' not in df.columns:
+                    st.markdown(f"❌ **{file.name}** → ❌ Coluna 'Data' não encontrada")
+                    total_erro += 1
+                    continue
+                df['Data'] = pd.to_datetime(df['Data'], dayfirst=True, errors='coerce')
+                if df['Data'].isna().all():
+                    st.markdown(f"❌ **{file.name}** → ⚠️ Coluna 'Data' não pôde ser convertida")
+                    total_erro += 1
+                    continue
+                df = df.dropna(subset=['Data'])
+                if df.empty:
+                    st.markdown(f"❌ **{file.name}** → ⚠️ Dados vazios após limpeza")
+                    total_erro += 1
+                    continue
+                df['datetime'] = df['Data'].dt.floor('min')
+                df = df.drop_duplicates(subset=['datetime'])
+                df = df.set_index('datetime').sort_index()
+                # ✅ IDENTIFICAR TIPO DO ATIVO USANDO A FUNÇÃO EXISTENTE
+                ticker_detectado = identificar_tipo(file.name)
+                if ticker_detectado == 'acoes':
+                    inicio_pregao = abertura_acoes
+                    fim_pregao = fechamento_acoes
+                elif ticker_detectado in ['mini_indice', 'mini_dolar']:
+                    inicio_pregao = abertura_mini
+                    fim_pregao = fechamento_mini
+                else:
+                    inicio_pregao = abertura_acoes
+                    fim_pregao = fechamento_acoes
+                # ✅ FILTRAR O DATAFRAME PARA O PREGÃO VÁLIDO
+                mascara_pregao = (
+                    (df.index.time >= inicio_pregao) &
+                    (df.index.time <= fim_pregao)
+                )
+                df_filtrado = df[mascara_pregao]
+                if df_filtrado.empty:
+                    st.markdown(f"🟡 **{file.name}** → ⚠️ Nenhum dado dentro do horário de pregão ({inicio_pregao.strftime('%H:%M')} - {fim_pregao.strftime('%H:%M')})")
+                    total_com_lacuna += 1
+                    total_analisados += 1
+                    continue
+                df_filtrado['data_sozinha'] = df_filtrado.index.date
+                datas = df_filtrado['data_sozinha'].unique()
+                total_dias = len(datas)
+                dias_com_lacuna = 0
+                detalhes_lacunas = []
+                for dia in datas:
+                    df_dia = df_filtrado[df_filtrado['data_sozinha'] == dia].copy()
+                    if df_dia.empty:
+                        continue
+                    horarios_reais = set(df_dia.index.time)
+                    inicio = datetime.combine(dia, inicio_pregao)
+                    fim = datetime.combine(dia, fim_pregao)
+                    horarios_esperados = []
+                    atual = inicio
+                    while atual <= fim:
+                        horarios_esperados.append(atual.time())
+                        atual += pd.Timedelta(minutes=5)
+                    faltando = [h for h in horarios_esperados if h not in horarios_reais]
+                    if faltando:
+                        dias_com_lacuna += 1
+                        horarios_faltando_str = ", ".join([h.strftime('%H:%M') for h in faltando[:5]])
+                        if len(faltando) > 5:
+                            horarios_faltando_str += f" +{len(faltando) - 5}"
+                        detalhes_lacunas.append(f"  → {dia.strftime('%d/%m/%Y')} → {horarios_faltando_str}")
+                if dias_com_lacuna == 0:
+                    st.markdown(f"✅ **{file.name}** → **{total_dias} dia(s)** → Todos os candles no pregão estão completos")
+                else:
+                    st.markdown(f"🟡 **{file.name}** → **{total_dias} dia(s)** → **{dias_com_lacuna} com lacunas** ⚠️")
+                    with st.expander(f"Detalhes: clique para ver onde faltam candles (dentro do pregão)"):
+                        for linha in detalhes_lacunas:
+                            st.markdown(f"<small>{linha}</small>", unsafe_allow_html=True)
+                    total_com_lacuna += 1
+                total_analisados += 1
+            except Exception as e:
+                st.markdown(f"❌ **{file.name}** → ❓ Erro: {type(e).__name__}: {str(e)}")
+                total_erro += 1
+        st.divider()
+        st.markdown("### 📊 **Resumo Geral**")
+        st.markdown(f"- ✅ **{total_analisados} arquivos analisados**")
+        st.markdown(f"- ⚠️ Arquivos com lacunas: **{total_com_lacuna}**")
+        st.markdown(f"- ❌ Arquivos com erro: **{total_erro}**")
+# ========================
+# TELA DE SOLICITAÇÃO DE ACESSO
+# ========================
+if "solicita_acesso" in st.session_state and st.session_state.solicita_acesso:
+    st.markdown("<h1 style='text-align: center;'>🔓 Acesso Grátis por 15 Dias</h1>", unsafe_allow_html=True)
+    st.markdown("<p style='text-align: center;'>Preencha seus dados abaixo e comece a usar o <strong>Radar B3</strong> imediatamente.</p>", unsafe_allow_html=True)
+    st.markdown("---")
+
+    st.markdown("### 🔐 Crie seu acesso agora")
+    email = st.text_input("📧 Email", key="cadastro_email")
+    senha = st.text_input("🔑 Senha", type="password", key="cadastro_senha")
+    confirma_senha = st.text_input("🔁 Confirmar Senha", type="password", key="cadastro_confirma")
+
+    plano_interesse = st.selectbox(
+        "🎯 Plano de interesse após o teste",
+        ["Prata", "Ouro", "Diamante"]
+    )
+
+    if st.button("✅ Criar Acesso", key="btn_criar_acesso"):
+        if not email or "@" not in email:
+            st.error("❌ Email inválido")
+        elif not senha:
+            st.error("❌ Senha obrigatória")
+        elif senha != confirma_senha:
+            st.error("❌ As senhas não conferem")
+        else:
+            pendentes = carregar_pendentes()
+            pendentes.append({
+                "email": email,
+                "senha": senha,
+                "plano_interesse": plano_interesse,
+                "data": datetime.now().strftime("%Y-%m-%d"),
+                "status": "pendente",
+                "dias": 15
+            })
+            salvar_pendentes(pendentes)
+
+            st.success(f"✅ Seu acesso foi solicitado com sucesso!")
+            st.success(f"🔑 Email: {email}")
+            st.info("🔍 O gestor analisará e liberará seu acesso em até 12h. Após isso, você poderá entrar com seu email e senha.")
+
+    if st.button("⬅️ Voltar à página inicial", key="btn_voltar_vitrine"):
+        del st.session_state.solicita_acesso
+        st.rerun()
+
+    st.markdown("### ❓ Como funciona?")
+    st.write("""
+    1. Você escolhe um email e senha  
+    2. Enviamos para análise  
+    3. O gestor libera seu acesso por 15 dias  
+    4. Você entra no sistema com suas credenciais  
+    5. Após 15 dias, pode renovar ou atualizar para um plano pago
+    """)
+
+    st.stop()
 
 # ========================
 # FUNÇÕES AUXILIARES
