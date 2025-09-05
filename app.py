@@ -1,4 +1,4 @@
-# teste_somente_intraday.py
+# app.py - Radar B3 (versão com Yahoo Finance)
 import streamlit as st
 import yfinance as yf
 import pandas as pd
@@ -50,7 +50,7 @@ def ajustar_ticker(ticker_input):
     if ticker.endswith(".SA"):
         return ticker
     if ticker.startswith("WIN") or ticker.startswith("WDO"):
-        return ticker
+        return ticker  # Futuros não usam .SA
     if len(ticker) >= 4 and ticker[-1].isdigit():
         return ticker + ".SA"
     return ticker
@@ -97,7 +97,7 @@ def processar_rastreamento_intraday(
                 df = pd.read_excel(file)
 
             # Normalizar nomes das colunas
-            df.columns = [str(col).strip().capitalize() for col in df.columns]
+            df.columns = [str(col).strip() for col in df.columns]
             df.rename(columns={
                 'Data': 'data',
                 'Abertura': 'open',
@@ -431,31 +431,47 @@ def sistema_principal():
 
                 data_reset = data.reset_index()
 
-                # Corrige nome da coluna de data
-                if 'Datetime' in data_reset.columns:
-                    data_reset.rename(columns={'Datetime': 'Data'}, inplace=True)
-                elif 'Date' in data_reset.columns:
-                    data_reset.rename(columns={'Date': 'Data'}, inplace=True)
-                else:
-                    st.error("❌ Erro: Coluna de data não encontrada.")
+                # Detectar coluna de data automaticamente
+                datetime_col = None
+                for col in data_reset.columns:
+                    if pd.api.types.is_datetime64_any_dtype(data_reset[col]):
+                        datetime_col = col
+                        break
+                if datetime_col is None:
+                    for col in data_reset.columns:
+                        coerced = pd.to_datetime(data_reset[col], errors='coerce', dayfirst=True)
+                        if coerced.notna().sum() > 0:
+                            data_reset[col] = coerced
+                            datetime_col = col
+                            break
+                if datetime_col is None and isinstance(data.index, pd.DatetimeIndex):
+                    data_reset.insert(0, 'Data', data.index)
+                    datetime_col = 'Data'
+                if datetime_col is None:
+                    st.error("❌ Erro: coluna de data não encontrada nos dados do Yahoo.")
                     st.stop()
+                if datetime_col != 'Data':
+                    data_reset.rename(columns={datetime_col: 'Data'}, inplace=True)
 
-                # Renomeia colunas para padrão esperado
-                data_reset.rename(columns={
-                    'Open': 'Abertura',
-                    'High': 'Máxima',
-                    'Low': 'Mínima',
-                    'Close': 'Fechamento',
-                    'Volume': 'Volume'
-                }, inplace=True)
+                # Renomear colunas com mapeamento flexível
+                rename_map = {}
+                for c in data_reset.columns:
+                    lc = str(c).lower()
+                    if 'open' in lc or 'abert' in lc: rename_map[c] = 'Abertura'
+                    if 'high' in lc or 'max' in lc: rename_map[c] = 'Máxima'
+                    if 'low' in lc or 'min' in lc: rename_map[c] = 'Mínima'
+                    if 'close' in lc or 'fech' in lc: rename_map[c] = 'Fechamento'
+                    if 'volume' in lc or lc == 'vol': rename_map[c] = 'Volume'
+                data_reset.rename(columns=rename_map, inplace=True)
 
-                data_reset['Data'] = pd.to_datetime(data_reset['Data'], errors='coerce')
+                # Converter e limpar
+                data_reset['Data'] = pd.to_datetime(data_reset['Data'], errors='coerce', dayfirst=True)
                 data_reset = data_reset.dropna(subset=['Data']).copy()
                 if data_reset.empty:
                     st.error("⚠️ Nenhum dado válido após conversão da data.")
                     st.stop()
 
-                # Simula um "arquivo" para compatibilidade
+                # Simular "arquivo" para compatibilidade
                 class FakeFile:
                     def __init__(self, name, df):
                         self.name = name
@@ -467,7 +483,7 @@ def sistema_principal():
                 st.success(f"✅ Dados de `{nome_exibicao}` carregados com sucesso! 📊 Total: {len(data_reset)} candles de 5min")
 
             except Exception as e:
-                st.error(f"❌ Erro ao baixar ou processar dados: `{e}`")
+                st.error(f"❌ Erro ao baixar ou processar dados: {e}")
                 st.stop()
 
         # Lê o período real dos dados baixados
