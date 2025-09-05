@@ -1,4 +1,4 @@
-# app.py
+# teste_somente_intraday.py
 import streamlit as st
 import yfinance as yf
 import pandas as pd
@@ -97,6 +97,7 @@ def verificar_lacunas(uploaded_files, abertura_acoes, fechamento_acoes, abertura
                 df['datetime'] = df['Data'].dt.floor('min')
                 df = df.drop_duplicates(subset=['datetime'])
                 df = df.set_index('datetime').sort_index()
+
                 ticker_detectado = identificar_tipo(file.name)
                 if ticker_detectado == 'acoes':
                     inicio_pregao = abertura_acoes
@@ -107,6 +108,7 @@ def verificar_lacunas(uploaded_files, abertura_acoes, fechamento_acoes, abertura
                 else:
                     inicio_pregao = abertura_acoes
                     fim_pregao = fechamento_acoes
+
                 mascara_pregao = (
                     (df.index.time >= inicio_pregao) &
                     (df.index.time <= fim_pregao)
@@ -117,6 +119,7 @@ def verificar_lacunas(uploaded_files, abertura_acoes, fechamento_acoes, abertura
                     total_com_lacuna += 1
                     total_analisados += 1
                     continue
+
                 df_filtrado['data_sozinha'] = df_filtrado.index.date
                 datas = df_filtrado['data_sozinha'].unique()
                 total_dias = len(datas)
@@ -493,7 +496,7 @@ def sistema_principal():
             st.error("❌ Acesso ao modo Intraday é exclusivo para o Plano Diamante.")
             st.stop()
 
-        # === SUBSTITUIÇÃO DO UPLOAD PELO YAHOO FINANCE ===
+        # === DADOS DO YAHOO FINANCE (sem upload) ===
         st.info("📡 Dados carregados automaticamente do Yahoo Finance (candles de 5min - últimos 60 dias)")
 
         ticker_input = st.text_input("Digite o ativo (ex: PETR4, WINM24, WDOF24):", value="PETR4").strip()
@@ -501,6 +504,7 @@ def sistema_principal():
             st.info("Por favor, digite um ativo para continuar.")
             st.stop()
 
+        # Ajusta o ticker: PETR4 → PETR4.SA | WINM24 → WINM24
         ticker = ajustar_ticker(ticker_input)
         nome_exibicao = ticker_input.upper()
 
@@ -511,19 +515,18 @@ def sistema_principal():
                     st.error(f"⚠️ Nenhum dado encontrado para `{ticker}`. Verifique o nome do ativo.")
                     st.stop()
 
-                # Resetar índice
                 data_reset = data.reset_index()
 
-                # Corrigir nome da coluna de data
+                # Corrige nome da coluna de data
                 if 'Datetime' in data_reset.columns:
                     data_reset.rename(columns={'Datetime': 'Data'}, inplace=True)
                 elif 'Date' in data_reset.columns:
                     data_reset.rename(columns={'Date': 'Data'}, inplace=True)
                 else:
-                    st.error("❌ Erro: Coluna de data não encontrada nos dados.")
+                    st.error("❌ Erro: Coluna de data não encontrada.")
                     st.stop()
 
-                # Renomear outras colunas
+                # Renomeia colunas para padrão esperado
                 data_reset.rename(columns={
                     'Open': 'Abertura',
                     'High': 'Máxima',
@@ -532,15 +535,13 @@ def sistema_principal():
                     'Volume': 'Volume'
                 }, inplace=True)
 
-                # Converter para datetime
                 data_reset['Data'] = pd.to_datetime(data_reset['Data'], errors='coerce')
                 data_reset = data_reset.dropna(subset=['Data']).copy()
-
                 if data_reset.empty:
                     st.error("⚠️ Nenhum dado válido após conversão da data.")
                     st.stop()
 
-                # Simular um "arquivo virtual"
+                # Simula um "arquivo" para compatibilidade
                 class FakeFile:
                     def __init__(self, name, df):
                         self.name = name
@@ -555,222 +556,241 @@ def sistema_principal():
                 st.error(f"❌ Erro ao baixar ou processar dados: `{e}`")
                 st.stop()
 
-        # Lê o período real dos dados
-        df_temp = data_reset.copy()
-        df_temp['data_sozinha'] = pd.to_datetime(df_temp['Data'], dayfirst=True, errors='coerce').dt.date
-        data_min_global = df_temp['data_sozinha'].min()
-        data_max_global = df_temp['data_sozinha'].max()
+        # Lê o período real dos dados baixados
+        data_min_global = None
+        data_max_global = None
+        for file in uploaded_files:
+            try:
+                df_temp = file.df.copy()
+                df_temp['data'] = pd.to_datetime(df_temp['Data'], dayfirst=True, errors='coerce')
+                df_temp = df_temp.dropna(subset=['data'])
+                df_temp['data_sozinha'] = df_temp['data'].dt.date
+                min_data = df_temp['data_sozinha'].min()
+                max_data = df_temp['data_sozinha'].max()
+                if data_min_global is None or min_data < data_min_global:
+                    data_min_global = min_data
+                if data_max_global is None or max_data > data_max_global:
+                    data_max_global = max_data
+            except Exception as e:
+                st.warning(f"⚠️ Erro ao processar {file.name}: {e}")
 
-        st.subheader("📅 Período disponível")
-        st.write(f"**Início:** {data_min_global.strftime('%d/%m/%Y')}")
-        st.write(f"**Fim:** {data_max_global.strftime('%d/%m/%Y')}")
+        if data_min_global and data_max_global:
+            st.subheader("📅 Período disponível")
+            st.write(f"**Início:** {data_min_global.strftime('%d/%m/%Y')}")
+            st.write(f"**Fim:** {data_max_global.strftime('%d/%m/%Y')}")
+            st.subheader("🔍 Filtro de período")
+            data_inicio = st.date_input("Data inicial", value=data_min_global, min_value=data_min_global, max_value=data_max_global)
+            data_fim = st.date_input("Data final", value=data_max_global, min_value=data_min_global, max_value=data_max_global)
 
-        st.subheader("🔍 Filtro de período")
-        data_inicio = st.date_input("Data inicial", value=data_min_global, min_value=data_min_global, max_value=data_max_global)
-        data_fim = st.date_input("Data final", value=data_max_global, min_value=data_min_global, max_value=data_max_global)
+            if isinstance(data_inicio, datetime):
+                data_inicio = data_inicio.date()
+            if isinstance(data_fim, datetime):
+                data_fim = data_fim.date()
 
-        if isinstance(data_inicio, datetime):
-            data_inicio = data_inicio.date()
-        if isinstance(data_fim, datetime):
-            data_fim = data_fim.date()
-
-        if data_inicio > data_fim:
-            st.error("❌ A data inicial não pode ser maior que a final.")
-            st.stop()
-
-        st.header("⚙️ Configure o Rastreamento")
-
-        # Calcular horários válidos
-        fim_pregao = {
-            'acoes': time_obj(17, 0),
-            'mini_indice': time_obj(18, 20),
-            'mini_dolar': time_obj(18, 20)
-        }
-        horarios_validos = [f"{h:02d}:{m:02d}" for h in range(9, 19) for m in range(0, 60, 5)]
-
-        with st.form("configuracoes"):
-            tipo_ativo = st.selectbox("Tipo de ativo", ["acoes", "mini_indice", "mini_dolar"])
-            qtd = st.number_input("Quantidade", min_value=1, value=1)
-            candles_pos_entrada = st.number_input("Candles após entrada", min_value=1, value=3)
-
-            # Atualizar último horário com base no tipo
-            ultimo_horario_entrada = (datetime.combine(datetime.today(), fim_pregao[tipo_ativo]) - pd.Timedelta(minutes=5 * int(candles_pos_entrada))).time()
-            horarios_filtrados = [h for h in horarios_validos if datetime.strptime(h, '%H:%M').time() <= ultimo_horario_entrada]
-
-            if len(horarios_filtrados) == 0:
-                st.warning("⚠️ Nenhum horário válido disponível com esse número de candles.")
+            if data_inicio > data_fim:
+                st.error("❌ A data inicial não pode ser maior que a final.")
                 st.stop()
 
-            st.info(f"✅ Horários válidos até **{ultimo_horario_entrada.strftime('%H:%M')}** para saída dentro do pregão.")
+            st.header("⚙️ Configure o Rastreamento")
 
-            horarios_selecionados = st.multiselect(
-                "Horários de análise",
-                options=horarios_filtrados,
-                default=[h for h in ["09:00", "09:05", "10:55", "11:00", "11:05"] if h in horarios_filtrados]
-            )
-            modo_estrategia = st.selectbox(
-                "Modo da Estratégia",
-                ["Contra Tendência", "A Favor da Tendência", "Ambos"]
-            )
-            if modo_estrategia in ["A Favor da Tendência", "Ambos"]:
-                dist_favor_compra = st.number_input("Distorção mínima COMPRA (%) - A Favor", value=0.5)
-                dist_favor_venda = st.number_input("Distorção mínima VENDA (%) - A Favor", value=0.5)
-            else:
-                dist_favor_compra = dist_favor_venda = 0.0
-            if modo_estrategia in ["Contra Tendência", "Ambos"]:
-                dist_compra_contra = st.number_input("Distorção mínima COMPRA (%) - Contra", value=0.3)
-                dist_venda_contra = st.number_input("Distorção mínima VENDA (%) - Contra", value=0.3)
-            else:
-                dist_compra_contra = dist_venda_contra = 0.0
-            referencia = st.selectbox(
-                "Referência da distorção",
-                ["Fechamento do dia anterior", "Mínima do dia anterior", "Abertura do dia atual"]
-            )
-            usar_filtro_liquidez = st.checkbox("Filtrar por liquidez mínima?", value=False)
-            limite_liquidez = st.number_input(
-                "Liquidez mínima diária (R$)",
-                min_value=0,
-                value=50000,
-                help="Ignora ativos com volume diário médio inferior a este valor.",
-                disabled=not usar_filtro_liquidez
-            )
-            submitted = st.form_submit_button("✅ Aplicar Configurações")
+            # ✅ Inicializa horarios_validos ANTES do form
+            horarios_validos = [f"{h:02d}:{m:02d}" for h in range(9, 19) for m in range(0, 60, 5)]
 
-        if submitted:
-            if not horarios_selecionados:
-                st.warning("⚠️ Selecione pelo menos um horário.")
-            else:
-                st.session_state.configuracoes_salvas = {
-                    "tipo_ativo": tipo_ativo,
-                    "qtd": qtd,
-                    "candles_pos_entrada": candles_pos_entrada,
-                    "dist_compra_contra": dist_compra_contra,
-                    "dist_venda_contra": dist_venda_contra,
-                    "dist_favor_compra": dist_favor_compra,
-                    "dist_favor_venda": dist_favor_venda,
-                    "referencia": referencia,
-                    "horarios_selecionados": horarios_selecionados,
-                    "modo_estrategia": modo_estrategia,
-                    "usar_filtro_liquidez": usar_filtro_liquidez,
-                    "limite_liquidez": limite_liquidez
-                }
-                st.success("✅ Configurações aplicadas!")
+            with st.form("configuracoes"):
+                tipo_ativo = st.selectbox("Tipo de ativo", ["acoes", "mini_indice", "mini_dolar"])
+                qtd = st.number_input("Quantidade", min_value=1, value=1)
+                candles_pos_entrada = st.number_input("Candles após entrada", min_value=1, value=3)
 
-        if "configuracoes_salvas" in st.session_state:
-            if st.button("🔍 Iniciar Rastreamento"):
-                cfg = st.session_state.configuracoes_salvas
-                with st.spinner("📡 Rastreando padrões de mercado..."):
-                    df_ops, dias_com_entrada, dias_ignorados, todos_dias_com_dados = processar_rastreamento_intraday(
-                        uploaded_files=[fake_file],
-                        tipo_ativo=cfg["tipo_ativo"],
-                        qtd=cfg["qtd"],
-                        candles_pos_entrada=cfg["candles_pos_entrada"],
-                        dist_compra_contra=cfg["dist_compra_contra"],
-                        dist_venda_contra=cfg["dist_venda_contra"],
-                        dist_favor_compra=cfg["dist_favor_compra"],
-                        dist_favor_venda=cfg["dist_favor_venda"],
-                        referencia=cfg["referencia"],
-                        horarios_selecionados=cfg["horarios_selecionados"],
-                        data_inicio=data_inicio,
-                        data_fim=data_fim,
-                        modo_estrategia=cfg["modo_estrategia"],
-                        usar_filtro_liquidez=cfg["usar_filtro_liquidez"],
-                        limite_liquidez=cfg["limite_liquidez"]
-                    )
-                if not df_ops.empty:
-                    df_ops = df_ops[df_ops['Horário'].isin(cfg["horarios_selecionados"])].copy()
-                    st.session_state.todas_operacoes = df_ops
-                    st.success(f"✅ Rastreamento concluído: {len(df_ops)} oportunidades detectadas.")
-                    for col in ['Preço Entrada', 'Preço Saída', 'Lucro (R$)', 'Max Drawdown %']:
-                        if col in df_ops.columns and df_ops[col].dtype == 'object':
-                            df_ops[col] = pd.to_numeric(df_ops[col].astype(str).str.replace(',', '.'), errors='coerce')
-                    st.markdown("### 📊 Resumo Consolidado por Horário de Entrada")
-                    resumo = df_ops.groupby(['Horário', 'Ação', 'Direção'], as_index=False).agg(
-                        Total_Eventos=('Lucro (R$)', 'count'),
-                        Acertos=('Lucro (R$)', lambda x: (x > 0).sum()),
-                        Lucro_Total=('Lucro (R$)', 'sum'),
-                        Max_DD_Medio=('Max Drawdown %', 'mean')
-                    )
-                    def icone_resumo(row):
-                        if 'Contra' in row['Direção']:
-                            return '🔽🟢' if 'Compra' in row['Direção'] else '🔼🔴'
-                        elif 'Favor' in row['Direção']:
-                            return '🔼🟢' if 'Compra' in row['Direção'] else '🔽🔴'
-                        return '⚪'
-                    resumo[' '] = resumo.apply(icone_resumo, axis=1)
-                    resumo['Taxa de Acerto'] = (resumo['Acertos'] / resumo['Total_Eventos']).map('{:.2%}'.format)
-                    resumo['Lucro Total (R$)'] = resumo['Lucro_Total'].map(lambda x: f"R$ {x:.2f}")
-                    resumo['Ganho Médio por Trade (R$)'] = (resumo['Lucro_Total'] / resumo['Total_Eventos']).map(lambda x: f"R$ {x:+.2f}")
-                    resumo['Máx. Drawdown Médio (%)'] = resumo['Max_DD_Medio'].map(lambda x: f"{x:+.2f}%")
-                    resumo = resumo[[
-                        ' ', 'Horário', 'Ação', 'Direção', 'Total_Eventos', 'Acertos', 'Taxa de Acerto',
-                        'Lucro Total (R$)', 'Ganho Médio por Trade (R$)', 'Máx. Drawdown Médio (%)'
-                    ]]
-                    def cor_resumo(row):
-                        try:
-                            valor = float(row['Lucro Total (R$)'].replace('R$', '').strip())
-                        except:
-                            valor = 0.0
-                        cor = '#d4edda' if valor > 0 else '#f8d7da' if valor < 0 else '#fff3cd'
-                        return [f'background-color: {cor}'] * len(row)
-                    st.dataframe(
-                        resumo.style.apply(cor_resumo, axis=1),
-                        use_container_width=True,
-                        hide_index=True
-                    )
-                    with st.expander("ℹ️ O que significam os ícones?"):
-                        st.markdown("""
-                        - **🔽🟢** = Compra (Contra) → Reversão (espera recuperação)  
-                        - **🔼🔴** = Venda (Contra) → Reversão (espera correção)  
-                        - **🔼🟢** = Compra (Favor) → A Favor da Tendência (acompanha alta)  
-                        - **🔽🔴** = Venda (Favor) → A Favor da Tendência (acompanha queda)  
-                        """)
-                    csv_data = df_ops.to_csv(index=False, sep=";", decimal=",", encoding='utf-8-sig')
-                    st.download_button(
-                        label="📥 Exportar Resultados para CSV",
-                        data=csv_data,
-                        file_name="resultados_intraday.csv",
-                        mime="text/csv"
-                    )
-                    with st.expander("📊 Análise de Dias"):
-                        st.write("Dias com entrada e saída válida:", len(dias_com_entrada))
-                        if dias_ignorados:
-                            st.write("Dias ignorados:")
-                            for dia, motivo in dias_ignorados[:10]:
-                                st.write(f"- {dia.strftime('%d/%m')} → {motivo}")
+                # ✅ Calcular último horário válido com base nos candles de saída
+                fim_pregao = {
+                    'acoes': time_obj(17, 0),
+                    'mini_indice': time_obj(18, 20),
+                    'mini_dolar': time_obj(18, 20)
+                }[tipo_ativo]
+                tempo_necessario = 5 * int(candles_pos_entrada)
+                ultimo_horario_entrada = (datetime.combine(datetime.today(), fim_pregao) - pd.Timedelta(minutes=tempo_necessario)).time()
+                todos_horarios_form = [f"{h:02d}:{m:02d}" for h in range(9, 19) for m in range(0, 60, 5)]
+                horarios_validos = [
+                    h for h in todos_horarios_form
+                    if datetime.strptime(h, '%H:%M').time() <= ultimo_horario_entrada
+                ]
+
+                if len(horarios_validos) < len(todos_horarios_form):
+                    st.info(f"ℹ️ Com {candles_pos_entrada} candles após entrada, só horários até **{ultimo_horario_entrada.strftime('%H:%M')}** são válidos para {tipo_ativo.replace('_', ' ').title()}.")
+                else:
+                    st.info(f"✅ Todos os horários estão disponíveis (saída dentro do pregão).")
+
+                horarios_selecionados = st.multiselect(
+                    "Horários de análise",
+                    options=horarios_validos,
+                    default=[h for h in ["09:00", "09:05", "10:55", "11:00", "11:05"] if h in horarios_validos]
+                )
+                modo_estrategia = st.selectbox(
+                    "Modo da Estratégia",
+                    ["Contra Tendência", "A Favor da Tendência", "Ambos"]
+                )
+                # ✅ CAMPOS: A FAVOR DA TENDÊNCIA
+                if modo_estrategia in ["A Favor da Tendência", "Ambos"]:
+                    dist_favor_compra = st.number_input("Distorção mínima COMPRA (%) - A Favor", value=0.5)
+                    dist_favor_venda = st.number_input("Distorção mínima VENDA (%) - A Favor", value=0.5)
+                else:
+                    dist_favor_compra = dist_favor_venda = 0.0
+                # ✅ CAMPOS: CONTRA TENDÊNCIA
+                if modo_estrategia in ["Contra Tendência", "Ambos"]:
+                    dist_compra_contra = st.number_input("Distorção mínima COMPRA (%) - Contra", value=0.3)
+                    dist_venda_contra = st.number_input("Distorção mínima VENDA (%) - Contra", value=0.3)
+                else:
+                    dist_compra_contra = dist_venda_contra = 0.0
+                referencia = st.selectbox(
+                    "Referência da distorção",
+                    ["Fechamento do dia anterior", "Mínima do dia anterior", "Abertura do dia atual"]
+                )
+                # ✅ FILTRO OPCIONAL DE LIQUIDEZ
+                usar_filtro_liquidez = st.checkbox("Filtrar por liquidez mínima?", value=False)
+                limite_liquidez = st.number_input(
+                    "Liquidez mínima diária (R$)",
+                    min_value=0,
+                    value=50000,
+                    help="Ignora ativos com volume diário médio inferior a este valor. Procura colunas como: volume, vol, quantidade, volume financeiro, valor negociado.",
+                    disabled=not usar_filtro_liquidez
+                )
+                submitted = st.form_submit_button("✅ Aplicar Configurações")
+
+            if submitted:
+                if not horarios_selecionados:
+                    st.warning("⚠️ Selecione pelo menos um horário.")
+                else:
+                    st.session_state.configuracoes_salvas = {
+                        "tipo_ativo": tipo_ativo,
+                        "qtd": qtd,
+                        "candles_pos_entrada": candles_pos_entrada,
+                        "dist_compra_contra": dist_compra_contra,
+                        "dist_venda_contra": dist_venda_contra,
+                        "dist_favor_compra": dist_favor_compra,
+                        "dist_favor_venda": dist_favor_venda,
+                        "referencia": referencia,
+                        "horarios_selecionados": horarios_selecionados,
+                        "modo_estrategia": modo_estrategia,
+                        "usar_filtro_liquidez": usar_filtro_liquidez,
+                        "limite_liquidez": limite_liquidez
+                    }
+                    st.success("✅ Configurações aplicadas!")
+
+            if "configuracoes_salvas" in st.session_state:
+                if st.button("🔍 Iniciar Rastreamento"):
+                    cfg = st.session_state.configuracoes_salvas
+                    with st.spinner("📡 Rastreando padrões de mercado..."):
+                        df_ops, dias_com_entrada, dias_ignorados, todos_dias_com_dados = processar_rastreamento_intraday(
+                            uploaded_files=uploaded_files,
+                            tipo_ativo=cfg["tipo_ativo"],
+                            qtd=cfg["qtd"],
+                            candles_pos_entrada=cfg["candles_pos_entrada"],
+                            dist_compra_contra=cfg["dist_compra_contra"],
+                            dist_venda_contra=cfg["dist_venda_contra"],
+                            dist_favor_compra=cfg["dist_favor_compra"],
+                            dist_favor_venda=cfg["dist_favor_venda"],
+                            referencia=cfg["referencia"],
+                            horarios_selecionados=cfg["horarios_selecionados"],
+                            data_inicio=data_inicio,
+                            data_fim=data_fim,
+                            modo_estrategia=cfg["modo_estrategia"],
+                            usar_filtro_liquidez=cfg["usar_filtro_liquidez"],
+                            limite_liquidez=cfg["limite_liquidez"]
+                        )
                     if not df_ops.empty:
-                        with st.expander("🔍 Ver oportunidades detalhadas (Intraday)"):
-                            df_detalhe = df_ops.copy()
-                            df_detalhe['Lucro (R$)'] = pd.to_numeric(df_detalhe['Lucro (R$)'], errors='coerce')
-                            df_detalhe['Acerto?'] = df_detalhe['Lucro (R$)'].apply(
-                                lambda x: '✅ Sim' if x > 0 else '❌ Não' if x < 0 else '➖ Neutro'
-                            )
-                            cols = list(df_detalhe.columns)
-                            lucro_idx = cols.index('Lucro (R$)')
-                            cols.insert(lucro_idx + 1, cols.pop(cols.index('Acerto?')))
-                            df_detalhe = df_detalhe[cols]
-                            def icone_detalhe(row):
-                                if 'Contra' in row['Direção']:
-                                    return '🔽🟢' if 'Compra' in row['Direção'] else '🔼🔴'
-                                elif 'Favor' in row['Direção']:
-                                    return '🔼🟢' if 'Compra' in row['Direção'] else '🔽🔴'
-                                return '⚪'
-                            df_detalhe[' '] = df_detalhe.apply(icone_detalhe, axis=1)
-                            cols = [' '] + [col for col in df_detalhe.columns if col != ' ']
-                            df_exibir = df_detalhe[cols]
-                            def cor_linha(row):
-                                valor = row['Lucro (R$)']
-                                if valor > 0:
-                                    return ['background-color: #d4edda'] * len(row)
-                                elif valor < 0:
-                                    return ['background-color: #f8d7da'] * len(row)
-                                else:
-                                    return ['background-color: #fff3cd'] * len(row)
-                            st.dataframe(
-                                df_exibir.style.apply(cor_linha, axis=1),
-                                use_container_width=True,
-                                hide_index=True
-                            )
+                        df_ops = df_ops[df_ops['Horário'].isin(cfg["horarios_selecionados"])].copy()
+                        st.session_state.todas_operacoes = df_ops
+                        st.success(f"✅ Rastreamento concluído: {len(df_ops)} oportunidades detectadas.")
+                        for col in ['Preço Entrada', 'Preço Saída', 'Lucro (R$)', 'Max Drawdown %']:
+                            if col in df_ops.columns and df_ops[col].dtype == 'object':
+                                df_ops[col] = pd.to_numeric(df_ops[col].astype(str).str.replace(',', '.'), errors='coerce')
+                        st.markdown("### 📊 Resumo Consolidado por Horário de Entrada")
+                        resumo = df_ops.groupby(['Horário', 'Ação', 'Direção'], as_index=False).agg(
+                            Total_Eventos=('Lucro (R$)', 'count'),
+                            Acertos=('Lucro (R$)', lambda x: (x > 0).sum()),
+                            Lucro_Total=('Lucro (R$)', 'sum'),
+                            Max_DD_Medio=('Max Drawdown %', 'mean')
+                        )
+                        def icone_resumo(row):
+                            if 'Contra' in row['Direção']:
+                                return '🔽🟢' if 'Compra' in row['Direção'] else '🔼🔴'
+                            elif 'Favor' in row['Direção']:
+                                return '🔼🟢' if 'Compra' in row['Direção'] else '🔽🔴'
+                            return '⚪'
+                        resumo[' '] = resumo.apply(icone_resumo, axis=1)
+                        resumo['Taxa de Acerto'] = (resumo['Acertos'] / resumo['Total_Eventos']).map('{:.2%}'.format)
+                        resumo['Lucro Total (R$)'] = resumo['Lucro_Total'].map(lambda x: f"R$ {x:.2f}")
+                        resumo['Ganho Médio por Trade (R$)'] = (resumo['Lucro_Total'] / resumo['Total_Eventos']).map(lambda x: f"R$ {x:+.2f}")
+                        resumo['Máx. Drawdown Médio (%)'] = resumo['Max_DD_Medio'].map(lambda x: f"{x:+.2f}%")
+                        resumo = resumo[[
+                            ' ', 'Horário', 'Ação', 'Direção', 'Total_Eventos', 'Acertos', 'Taxa de Acerto',
+                            'Lucro Total (R$)', 'Ganho Médio por Trade (R$)', 'Máx. Drawdown Médio (%)'
+                        ]]
+                        def cor_resumo(row):
+                            try:
+                                valor = float(row['Lucro Total (R$)'].replace('R$', '').strip())
+                            except:
+                                valor = 0.0
+                            cor = '#d4edda' if valor > 0 else '#f8d7da' if valor < 0 else '#fff3cd'
+                            return [f'background-color: {cor}'] * len(row)
+                        st.dataframe(
+                            resumo.style.apply(cor_resumo, axis=1),
+                            use_container_width=True,
+                            hide_index=True
+                        )
+                        with st.expander("ℹ️ O que significam os ícones?"):
+                            st.markdown("""
+                            - **🔽🟢** = Compra (Contra) → Reversão (espera recuperação)  
+                            - **🔼🔴** = Venda (Contra) → Reversão (espera correção)  
+                            - **🔼🟢** = Compra (Favor) → A Favor da Tendência (acompanha alta)  
+                            - **🔽🔴** = Venda (Favor) → A Favor da Tendência (acompanha queda)  
+                            """)
+                        csv_data = df_ops.to_csv(index=False, sep=";", decimal=",", encoding='utf-8-sig')
+                        st.download_button(
+                            label="📥 Exportar Resultados para CSV",
+                            data=csv_data,
+                            file_name="resultados_intraday.csv",
+                            mime="text/csv"
+                        )
+                        with st.expander("📊 Análise de Dias"):
+                            st.write("Dias com entrada e saída válida:", len(dias_com_entrada))
+                            if dias_ignorados:
+                                st.write("Dias ignorados:")
+                                for dia, motivo in dias_ignorados[:10]:
+                                    st.write(f"- {dia.strftime('%d/%m')} → {motivo}")
+                        if not df_ops.empty:
+                            with st.expander("🔍 Ver oportunidades detalhadas (Intraday)"):
+                                df_detalhe = df_ops.copy()
+                                df_detalhe['Lucro (R$)'] = pd.to_numeric(df_detalhe['Lucro (R$)'], errors='coerce')
+                                df_detalhe['Acerto?'] = df_detalhe['Lucro (R$)'].apply(
+                                    lambda x: '✅ Sim' if x > 0 else '❌ Não' if x < 0 else '➖ Neutro'
+                                )
+                                cols = list(df_detalhe.columns)
+                                lucro_idx = cols.index('Lucro (R$)')
+                                cols.insert(lucro_idx + 1, cols.pop(cols.index('Acerto?')))
+                                df_detalhe = df_detalhe[cols]
+                                def icone_detalhe(row):
+                                    if 'Contra' in row['Direção']:
+                                        return '🔽🟢' if 'Compra' in row['Direção'] else '🔼🔴'
+                                    elif 'Favor' in row['Direção']:
+                                        return '🔼🟢' if 'Compra' in row['Direção'] else '🔽🔴'
+                                    return '⚪'
+                                df_detalhe[' '] = df_detalhe.apply(icone_detalhe, axis=1)
+                                cols = [' '] + [col for col in df_detalhe.columns if col != ' ']
+                                df_exibir = df_detalhe[cols]
+                                def cor_linha(row):
+                                    valor = row['Lucro (R$)']
+                                    if valor > 0:
+                                        return ['background-color: #d4edda'] * len(row)
+                                    elif valor < 0:
+                                        return ['background-color: #f8d7da'] * len(row)
+                                    else:
+                                        return ['background-color: #fff3cd'] * len(row)
+                                st.dataframe(
+                                    df_exibir.style.apply(cor_linha, axis=1),
+                                    use_container_width=True,
+                                    hide_index=True
+                                )
 
 # ========================
 # EXECUÇÃO
