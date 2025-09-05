@@ -50,7 +50,7 @@ def ajustar_ticker(ticker_input):
     if ticker.endswith(".SA"):
         return ticker
     if ticker.startswith("WIN") or ticker.startswith("WDO"):
-        return ticker  # Futuros não usam .SA
+        return ticker
     if len(ticker) >= 4 and ticker[-1].isdigit():
         return ticker + ".SA"
     return ticker
@@ -97,7 +97,6 @@ def verificar_lacunas(uploaded_files, abertura_acoes, fechamento_acoes, abertura
                 df['datetime'] = df['Data'].dt.floor('min')
                 df = df.drop_duplicates(subset=['datetime'])
                 df = df.set_index('datetime').sort_index()
-
                 ticker_detectado = identificar_tipo(file.name)
                 if ticker_detectado == 'acoes':
                     inicio_pregao = abertura_acoes
@@ -108,7 +107,6 @@ def verificar_lacunas(uploaded_files, abertura_acoes, fechamento_acoes, abertura
                 else:
                     inicio_pregao = abertura_acoes
                     fim_pregao = fechamento_acoes
-
                 mascara_pregao = (
                     (df.index.time >= inicio_pregao) &
                     (df.index.time <= fim_pregao)
@@ -119,7 +117,6 @@ def verificar_lacunas(uploaded_files, abertura_acoes, fechamento_acoes, abertura
                     total_com_lacuna += 1
                     total_analisados += 1
                     continue
-
                 df_filtrado['data_sozinha'] = df_filtrado.index.date
                 datas = df_filtrado['data_sozinha'].unique()
                 total_dias = len(datas)
@@ -501,30 +498,46 @@ def sistema_principal():
 
         ticker_input = st.text_input("Digite o ativo (ex: PETR4, WINM24, WDOF24):", value="PETR4").strip()
         if not ticker_input:
+            st.info("Por favor, digite um ativo para continuar.")
             st.stop()
 
         ticker = ajustar_ticker(ticker_input)
         nome_exibicao = ticker_input.upper()
 
-        with st.spinner(f"Baixando dados de {ticker}..."):
+        with st.spinner(f"Baixando dados de `{ticker}`..."):
             try:
                 data = yf.download(ticker, period="60d", interval="5m", auto_adjust=True, progress=False)
                 if data.empty:
                     st.error(f"⚠️ Nenhum dado encontrado para `{ticker}`. Verifique o nome do ativo.")
                     st.stop()
+
+                # Resetar índice
                 data_reset = data.reset_index()
+
+                # Corrigir nome da coluna de data
+                if 'Datetime' in data_reset.columns:
+                    data_reset.rename(columns={'Datetime': 'Data'}, inplace=True)
+                elif 'Date' in data_reset.columns:
+                    data_reset.rename(columns={'Date': 'Data'}, inplace=True)
+                else:
+                    st.error("❌ Erro: Coluna de data não encontrada nos dados.")
+                    st.stop()
+
+                # Renomear outras colunas
                 data_reset.rename(columns={
-                    'Datetime': 'Data',
                     'Open': 'Abertura',
                     'High': 'Máxima',
                     'Low': 'Mínima',
                     'Close': 'Fechamento',
                     'Volume': 'Volume'
                 }, inplace=True)
+
+                # Converter para datetime
                 data_reset['Data'] = pd.to_datetime(data_reset['Data'], errors='coerce')
-                data_reset = data_reset.dropna(subset=['Data'])
+                data_reset = data_reset.dropna(subset=['Data']).copy()
+
                 if data_reset.empty:
-                    st.error("⚠️ Dados inválidos após processamento.")
+                    st.error("⚠️ Nenhum dado válido após conversão da data.")
                     st.stop()
 
                 # Simular um "arquivo virtual"
@@ -536,16 +549,14 @@ def sistema_principal():
                 fake_file = FakeFile(f"{nome_exibicao}.xlsx", data_reset)
                 uploaded_files = [fake_file]
 
-                st.success(f"✅ Dados de `{nome_exibicao}` carregados com sucesso! Candles: {len(data_reset)}")
+                st.success(f"✅ Dados de `{nome_exibicao}` carregados com sucesso! 📊 Total: {len(data_reset)} candles de 5min")
 
             except Exception as e:
-                st.error(f"❌ Erro ao baixar dados: {e}")
+                st.error(f"❌ Erro ao baixar ou processar dados: `{e}`")
                 st.stop()
 
-        # === REMOVIDO: Configurações de horário do pregão ===
-
         # Lê o período real dos dados
-        df_temp = data_reset
+        df_temp = data_reset.copy()
         df_temp['data_sozinha'] = pd.to_datetime(df_temp['Data'], dayfirst=True, errors='coerce').dt.date
         data_min_global = df_temp['data_sozinha'].min()
         data_max_global = df_temp['data_sozinha'].max()
@@ -569,6 +580,12 @@ def sistema_principal():
 
         st.header("⚙️ Configure o Rastreamento")
 
+        # Calcular horários válidos
+        fim_pregao = {
+            'acoes': time_obj(17, 0),
+            'mini_indice': time_obj(18, 20),
+            'mini_dolar': time_obj(18, 20)
+        }
         horarios_validos = [f"{h:02d}:{m:02d}" for h in range(9, 19) for m in range(0, 60, 5)]
 
         with st.form("configuracoes"):
@@ -576,16 +593,11 @@ def sistema_principal():
             qtd = st.number_input("Quantidade", min_value=1, value=1)
             candles_pos_entrada = st.number_input("Candles após entrada", min_value=1, value=3)
 
-            fim_pregao = {
-                'acoes': time_obj(17, 0),
-                'mini_indice': time_obj(18, 20),
-                'mini_dolar': time_obj(18, 20)
-            }[tipo_ativo]
-            tempo_necessario = 5 * int(candles_pos_entrada)
-            ultimo_horario_entrada = (datetime.combine(datetime.today(), fim_pregao) - pd.Timedelta(minutes=tempo_necessario)).time()
-            horarios_validos = [h for h in horarios_validos if datetime.strptime(h, '%H:%M').time() <= ultimo_horario_entrada]
+            # Atualizar último horário com base no tipo
+            ultimo_horario_entrada = (datetime.combine(datetime.today(), fim_pregao[tipo_ativo]) - pd.Timedelta(minutes=5 * int(candles_pos_entrada))).time()
+            horarios_filtrados = [h for h in horarios_validos if datetime.strptime(h, '%H:%M').time() <= ultimo_horario_entrada]
 
-            if len(horarios_validos) < 1:
+            if len(horarios_filtrados) == 0:
                 st.warning("⚠️ Nenhum horário válido disponível com esse número de candles.")
                 st.stop()
 
@@ -593,8 +605,8 @@ def sistema_principal():
 
             horarios_selecionados = st.multiselect(
                 "Horários de análise",
-                options=horarios_validos,
-                default=[h for h in ["09:00", "09:05", "10:55", "11:00", "11:05"] if h in horarios_validos]
+                options=horarios_filtrados,
+                default=[h for h in ["09:00", "09:05", "10:55", "11:00", "11:05"] if h in horarios_filtrados]
             )
             modo_estrategia = st.selectbox(
                 "Modo da Estratégia",
