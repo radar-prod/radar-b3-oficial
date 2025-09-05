@@ -50,117 +50,10 @@ def ajustar_ticker(ticker_input):
     if ticker.endswith(".SA"):
         return ticker
     if ticker.startswith("WIN") or ticker.startswith("WDO"):
-        return ticker  # Futuros não usam .SA
+        return ticker
     if len(ticker) >= 4 and ticker[-1].isdigit():
         return ticker + ".SA"
     return ticker
-
-# ========================
-# ✅ FUNÇÃO CORRIGIDA: Verificar lacunas (com identificar_tipo)
-# ========================
-def verificar_lacunas(uploaded_files, abertura_acoes, fechamento_acoes, abertura_mini, fechamento_mini):
-    with st.expander("🔍 Validação de Dados: Status por Arquivo"):
-        st.markdown("### 📂 Resumo de Integridade dos Arquivos")
-        total_analisados = 0
-        total_com_lacuna = 0
-        total_erro = 0
-        for file in uploaded_files:
-            try:
-                excel = pd.ExcelFile(file)
-                df = None
-                for sheet in excel.sheet_names:
-                    try:
-                        temp_df = pd.read_excel(excel, sheet_name=sheet)
-                        if not temp_df.empty and 'Data' in temp_df.columns:
-                            df = temp_df
-                            break
-                    except:
-                        continue
-                if df is None:
-                    st.markdown(f"❌ **{file.name}** → ❌ Nenhuma aba com coluna 'Data' encontrada")
-                    total_erro += 1
-                    continue
-                if 'Data' not in df.columns:
-                    st.markdown(f"❌ **{file.name}** → ❌ Coluna 'Data' não encontrada")
-                    total_erro += 1
-                    continue
-                df['Data'] = pd.to_datetime(df['Data'], dayfirst=True, errors='coerce')
-                if df['Data'].isna().all():
-                    st.markdown(f"❌ **{file.name}** → ⚠️ Coluna 'Data' não pôde ser convertida")
-                    total_erro += 1
-                    continue
-                df = df.dropna(subset=['Data'])
-                if df.empty:
-                    st.markdown(f"❌ **{file.name}** → ⚠️ Dados vazios após limpeza")
-                    total_erro += 1
-                    continue
-                df['datetime'] = df['Data'].dt.floor('min')
-                df = df.drop_duplicates(subset=['datetime'])
-                df = df.set_index('datetime').sort_index()
-
-                ticker_detectado = identificar_tipo(file.name)
-                if ticker_detectado == 'acoes':
-                    inicio_pregao = abertura_acoes
-                    fim_pregao = fechamento_acoes
-                elif ticker_detectado in ['mini_indice', 'mini_dolar']:
-                    inicio_pregao = abertura_mini
-                    fim_pregao = fechamento_mini
-                else:
-                    inicio_pregao = abertura_acoes
-                    fim_pregao = fechamento_acoes
-
-                mascara_pregao = (
-                    (df.index.time >= inicio_pregao) &
-                    (df.index.time <= fim_pregao)
-                )
-                df_filtrado = df[mascara_pregao]
-                if df_filtrado.empty:
-                    st.markdown(f"🟡 **{file.name}** → ⚠️ Nenhum dado dentro do horário de pregão ({inicio_pregao.strftime('%H:%M')} - {fim_pregao.strftime('%H:%M')})")
-                    total_com_lacuna += 1
-                    total_analisados += 1
-                    continue
-
-                df_filtrado['data_sozinha'] = df_filtrado.index.date
-                datas = df_filtrado['data_sozinha'].unique()
-                total_dias = len(datas)
-                dias_com_lacuna = 0
-                detalhes_lacunas = []
-                for dia in datas:
-                    df_dia = df_filtrado[df_filtrado['data_sozinha'] == dia].copy()
-                    if df_dia.empty:
-                        continue
-                    horarios_reais = set(df_dia.index.time)
-                    inicio = datetime.combine(dia, inicio_pregao)
-                    fim = datetime.combine(dia, fim_pregao)
-                    horarios_esperados = []
-                    atual = inicio
-                    while atual <= fim:
-                        horarios_esperados.append(atual.time())
-                        atual += pd.Timedelta(minutes=5)
-                    faltando = [h for h in horarios_esperados if h not in horarios_reais]
-                    if faltando:
-                        dias_com_lacuna += 1
-                        horarios_faltando_str = ", ".join([h.strftime('%H:%M') for h in faltando[:5]])
-                        if len(faltando) > 5:
-                            horarios_faltando_str += f" +{len(faltando) - 5}"
-                        detalhes_lacunas.append(f"  → {dia.strftime('%d/%m/%Y')} → {horarios_faltando_str}")
-                if dias_com_lacuna == 0:
-                    st.markdown(f"✅ **{file.name}** → **{total_dias} dia(s)** → Todos os candles no pregão estão completos")
-                else:
-                    st.markdown(f"🟡 **{file.name}** → **{total_dias} dia(s)** → **{dias_com_lacuna} com lacunas** ⚠️")
-                    with st.expander(f"Detalhes: clique para ver onde faltam candles (dentro do pregão)"):
-                        for linha in detalhes_lacunas:
-                            st.markdown(f"<small>{linha}</small>", unsafe_allow_html=True)
-                    total_com_lacuna += 1
-                total_analisados += 1
-            except Exception as e:
-                st.markdown(f"❌ **{file.name}** → ❓ Erro: {type(e).__name__}: {str(e)}")
-                total_erro += 1
-        st.divider()
-        st.markdown("### 📊 **Resumo Geral**")
-        st.markdown(f"- ✅ **{total_analisados} arquivos analisados**")
-        st.markdown(f"- ⚠️ Arquivos com lacunas: **{total_com_lacuna}**")
-        st.markdown(f"- ❌ Arquivos com erro: **{total_erro}**")
 
 # ========================
 # FUNÇÃO DE RASTREAMENTO INTRADAY (otimizada)
@@ -189,12 +82,32 @@ def processar_rastreamento_intraday(
     arquivos_ignorados = []
     mensagens_liquidez = []
 
+    # ========================
+    # OTIMIZAÇÃO: ler cada arquivo APENAS UMA VEZ
+    # ========================
     arquivos_processados = {}
+
     def carregar_arquivo(file):
         try:
-            df = pd.read_excel(file)
+            # ✅ Se for FakeFile (vindo do Yahoo Finance)
+            if hasattr(file, "df"):
+                df = file.df.copy()
+            # ✅ Se for arquivo real (upload Excel)
+            else:
+                df = pd.read_excel(file)
+
+            # Normalizar nomes das colunas
             df.columns = [str(col).strip().capitalize() for col in df.columns]
-            df.rename(columns={'Data': 'data', 'Abertura': 'open', 'Máxima': 'high', 'Mínima': 'low', 'Fechamento': 'close'}, inplace=True)
+            df.rename(columns={
+                'Data': 'data',
+                'Abertura': 'open',
+                'Máxima': 'high',
+                'Mínima': 'low',
+                'Fechamento': 'close',
+                'Volume': 'volume'
+            }, inplace=True)
+
+            # Converter coluna de data
             df['data'] = pd.to_datetime(df['data'], dayfirst=True, errors='coerce')
             df = df.dropna(subset=['data'])
             df['data_limpa'] = df['data'].dt.floor('min')
@@ -206,6 +119,7 @@ def processar_rastreamento_intraday(
             df = df[(df['data_sozinha'] >= data_inicio) & (df['data_sozinha'] <= data_fim)]
             return df
         except Exception as e:
+            st.error(f"❌ Erro ao processar {getattr(file, 'name', 'arquivo desconhecido')}: {e}")
             return None
 
     with ThreadPoolExecutor() as executor:
@@ -253,7 +167,7 @@ def processar_rastreamento_intraday(
                         col_lower = col.lower().strip()
                         if col_lower in ['volume', 'vol', 'quantidade', 'negocios', 'negócios']:
                             col_volume_acoes = col
-                        elif col_lower in ['volume financeiro', 'vol financeiro', 'valor negociado', 'valor', 'vlr negociado', 'volume_r$', 'volume financ', 'volume financeiro (r$)']:
+                        elif col_lower in ['volume financeiro', 'vol financeiro', 'valor negociado', 'valor', 'vlr negociado', 'volume_r$', 'volume_financ', 'volume financeiro (r$)']:
                             col_volume_financeiro = col
 
                     if col_volume_financeiro is not None:
@@ -496,7 +410,7 @@ def sistema_principal():
             st.error("❌ Acesso ao modo Intraday é exclusivo para o Plano Diamante.")
             st.stop()
 
-        # === SUBSTITUIÇÃO DO UPLOAD PELO YAHOO FINANCE ===
+        # === DADOS DO YAHOO FINANCE (sem upload) ===
         st.info("📡 Dados carregados automaticamente do Yahoo Finance (candles de 5min - últimos 60 dias)")
 
         ticker_input = st.text_input("Digite o ativo (ex: PETR4, WINM24, WDOF24):", value="PETR4").strip()
@@ -515,19 +429,18 @@ def sistema_principal():
                     st.error(f"⚠️ Nenhum dado encontrado para `{ticker}`. Verifique o nome do ativo.")
                     st.stop()
 
-                # Resetar índice
                 data_reset = data.reset_index()
 
-                # Corrigir nome da coluna de data
+                # Corrige nome da coluna de data
                 if 'Datetime' in data_reset.columns:
                     data_reset.rename(columns={'Datetime': 'Data'}, inplace=True)
                 elif 'Date' in data_reset.columns:
                     data_reset.rename(columns={'Date': 'Data'}, inplace=True)
                 else:
-                    st.error("❌ Erro: Coluna de data não encontrada nos dados.")
+                    st.error("❌ Erro: Coluna de data não encontrada.")
                     st.stop()
 
-                # Renomear outras colunas
+                # Renomeia colunas para padrão esperado
                 data_reset.rename(columns={
                     'Open': 'Abertura',
                     'High': 'Máxima',
@@ -536,15 +449,13 @@ def sistema_principal():
                     'Volume': 'Volume'
                 }, inplace=True)
 
-                # Converter para datetime
                 data_reset['Data'] = pd.to_datetime(data_reset['Data'], errors='coerce')
                 data_reset = data_reset.dropna(subset=['Data']).copy()
-
                 if data_reset.empty:
                     st.error("⚠️ Nenhum dado válido após conversão da data.")
                     st.stop()
 
-                # Simular um "arquivo virtual"
+                # Simula um "arquivo" para compatibilidade
                 class FakeFile:
                     def __init__(self, name, df):
                         self.name = name
@@ -677,7 +588,7 @@ def sistema_principal():
                     cfg = st.session_state.configuracoes_salvas
                     with st.spinner("📡 Rastreando padrões de mercado..."):
                         df_ops, dias_com_entrada, dias_ignorados, todos_dias_com_dados = processar_rastreamento_intraday(
-                            uploaded_files=[fake_file],
+                            uploaded_files=uploaded_files,
                             tipo_ativo=cfg["tipo_ativo"],
                             qtd=cfg["qtd"],
                             candles_pos_entrada=cfg["candles_pos_entrada"],
