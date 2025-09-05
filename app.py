@@ -50,7 +50,7 @@ def ajustar_ticker(ticker_input):
     if ticker.endswith(".SA"):
         return ticker
     if ticker.startswith("WIN") or ticker.startswith("WDO"):
-        return ticker
+        return ticker  # Futuros não usam .SA
     if len(ticker) >= 4 and ticker[-1].isdigit():
         return ticker + ".SA"
     return ticker
@@ -496,7 +496,7 @@ def sistema_principal():
             st.error("❌ Acesso ao modo Intraday é exclusivo para o Plano Diamante.")
             st.stop()
 
-        # === DADOS DO YAHOO FINANCE (sem upload) ===
+        # === SUBSTITUIÇÃO DO UPLOAD PELO YAHOO FINANCE ===
         st.info("📡 Dados carregados automaticamente do Yahoo Finance (candles de 5min - últimos 60 dias)")
 
         ticker_input = st.text_input("Digite o ativo (ex: PETR4, WINM24, WDOF24):", value="PETR4").strip()
@@ -515,18 +515,19 @@ def sistema_principal():
                     st.error(f"⚠️ Nenhum dado encontrado para `{ticker}`. Verifique o nome do ativo.")
                     st.stop()
 
+                # Resetar índice
                 data_reset = data.reset_index()
 
-                # Corrige nome da coluna de data
+                # Corrigir nome da coluna de data
                 if 'Datetime' in data_reset.columns:
                     data_reset.rename(columns={'Datetime': 'Data'}, inplace=True)
                 elif 'Date' in data_reset.columns:
                     data_reset.rename(columns={'Date': 'Data'}, inplace=True)
                 else:
-                    st.error("❌ Erro: Coluna de data não encontrada.")
+                    st.error("❌ Erro: Coluna de data não encontrada nos dados.")
                     st.stop()
 
-                # Renomeia colunas para padrão esperado
+                # Renomear outras colunas
                 data_reset.rename(columns={
                     'Open': 'Abertura',
                     'High': 'Máxima',
@@ -535,13 +536,15 @@ def sistema_principal():
                     'Volume': 'Volume'
                 }, inplace=True)
 
+                # Converter para datetime
                 data_reset['Data'] = pd.to_datetime(data_reset['Data'], errors='coerce')
                 data_reset = data_reset.dropna(subset=['Data']).copy()
+
                 if data_reset.empty:
                     st.error("⚠️ Nenhum dado válido após conversão da data.")
                     st.stop()
 
-                # Simula um "arquivo" para compatibilidade
+                # Simular um "arquivo virtual"
                 class FakeFile:
                     def __init__(self, name, df):
                         self.name = name
@@ -593,7 +596,12 @@ def sistema_principal():
 
             st.header("⚙️ Configure o Rastreamento")
 
-            # ✅ Inicializa horarios_validos ANTES do form
+            # Calcular horários válidos
+            fim_pregao = {
+                'acoes': time_obj(17, 0),
+                'mini_indice': time_obj(18, 20),
+                'mini_dolar': time_obj(18, 20)
+            }
             horarios_validos = [f"{h:02d}:{m:02d}" for h in range(9, 19) for m in range(0, 60, 5)]
 
             with st.form("configuracoes"):
@@ -601,41 +609,30 @@ def sistema_principal():
                 qtd = st.number_input("Quantidade", min_value=1, value=1)
                 candles_pos_entrada = st.number_input("Candles após entrada", min_value=1, value=3)
 
-                # ✅ Calcular último horário válido com base nos candles de saída
-                fim_pregao = {
-                    'acoes': time_obj(17, 0),
-                    'mini_indice': time_obj(18, 20),
-                    'mini_dolar': time_obj(18, 20)
-                }[tipo_ativo]
-                tempo_necessario = 5 * int(candles_pos_entrada)
-                ultimo_horario_entrada = (datetime.combine(datetime.today(), fim_pregao) - pd.Timedelta(minutes=tempo_necessario)).time()
-                todos_horarios_form = [f"{h:02d}:{m:02d}" for h in range(9, 19) for m in range(0, 60, 5)]
-                horarios_validos = [
-                    h for h in todos_horarios_form
-                    if datetime.strptime(h, '%H:%M').time() <= ultimo_horario_entrada
-                ]
+                # Atualizar último horário com base no tipo
+                ultimo_horario_entrada = (datetime.combine(datetime.today(), fim_pregao[tipo_ativo]) - pd.Timedelta(minutes=5 * int(candles_pos_entrada))).time()
+                horarios_filtrados = [h for h in horarios_validos if datetime.strptime(h, '%H:%M').time() <= ultimo_horario_entrada]
 
-                if len(horarios_validos) < len(todos_horarios_form):
-                    st.info(f"ℹ️ Com {candles_pos_entrada} candles após entrada, só horários até **{ultimo_horario_entrada.strftime('%H:%M')}** são válidos para {tipo_ativo.replace('_', ' ').title()}.")
-                else:
-                    st.info(f"✅ Todos os horários estão disponíveis (saída dentro do pregão).")
+                if len(horarios_filtrados) == 0:
+                    st.warning("⚠️ Nenhum horário válido disponível com esse número de candles.")
+                    st.stop()
+
+                st.info(f"✅ Horários válidos até **{ultimo_horario_entrada.strftime('%H:%M')}** para saída dentro do pregão.")
 
                 horarios_selecionados = st.multiselect(
                     "Horários de análise",
-                    options=horarios_validos,
-                    default=[h for h in ["09:00", "09:05", "10:55", "11:00", "11:05"] if h in horarios_validos]
+                    options=horarios_filtrados,
+                    default=[h for h in ["09:00", "09:05", "10:55", "11:00", "11:05"] if h in horarios_filtrados]
                 )
                 modo_estrategia = st.selectbox(
                     "Modo da Estratégia",
                     ["Contra Tendência", "A Favor da Tendência", "Ambos"]
                 )
-                # ✅ CAMPOS: A FAVOR DA TENDÊNCIA
                 if modo_estrategia in ["A Favor da Tendência", "Ambos"]:
                     dist_favor_compra = st.number_input("Distorção mínima COMPRA (%) - A Favor", value=0.5)
                     dist_favor_venda = st.number_input("Distorção mínima VENDA (%) - A Favor", value=0.5)
                 else:
                     dist_favor_compra = dist_favor_venda = 0.0
-                # ✅ CAMPOS: CONTRA TENDÊNCIA
                 if modo_estrategia in ["Contra Tendência", "Ambos"]:
                     dist_compra_contra = st.number_input("Distorção mínima COMPRA (%) - Contra", value=0.3)
                     dist_venda_contra = st.number_input("Distorção mínima VENDA (%) - Contra", value=0.3)
@@ -645,13 +642,12 @@ def sistema_principal():
                     "Referência da distorção",
                     ["Fechamento do dia anterior", "Mínima do dia anterior", "Abertura do dia atual"]
                 )
-                # ✅ FILTRO OPCIONAL DE LIQUIDEZ
                 usar_filtro_liquidez = st.checkbox("Filtrar por liquidez mínima?", value=False)
                 limite_liquidez = st.number_input(
                     "Liquidez mínima diária (R$)",
                     min_value=0,
                     value=50000,
-                    help="Ignora ativos com volume diário médio inferior a este valor. Procura colunas como: volume, vol, quantidade, volume financeiro, valor negociado.",
+                    help="Ignora ativos com volume diário médio inferior a este valor.",
                     disabled=not usar_filtro_liquidez
                 )
                 submitted = st.form_submit_button("✅ Aplicar Configurações")
@@ -681,7 +677,7 @@ def sistema_principal():
                     cfg = st.session_state.configuracoes_salvas
                     with st.spinner("📡 Rastreando padrões de mercado..."):
                         df_ops, dias_com_entrada, dias_ignorados, todos_dias_com_dados = processar_rastreamento_intraday(
-                            uploaded_files=uploaded_files,
+                            uploaded_files=[fake_file],
                             tipo_ativo=cfg["tipo_ativo"],
                             qtd=cfg["qtd"],
                             candles_pos_entrada=cfg["candles_pos_entrada"],
