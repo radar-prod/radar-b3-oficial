@@ -1,4 +1,4 @@
-# app.py - Radar B3 (versão com Yahoo Finance)
+# app.py - Radar B3 (versão com Yahoo Finance integrado)
 import streamlit as st
 import yfinance as yf
 import pandas as pd
@@ -92,7 +92,6 @@ def processar_rastreamento_intraday(
             # ✅ Se for FakeFile (vindo do Yahoo Finance)
             if hasattr(file, "df"):
                 df = file.df.copy()
-            # ✅ Se for arquivo real (upload Excel)
             else:
                 df = pd.read_excel(file)
 
@@ -566,13 +565,13 @@ def sistema_principal():
                     ["Contra Tendência", "A Favor da Tendência", "Ambos"]
                 )
                 if modo_estrategia in ["A Favor da Tendência", "Ambos"]:
-                    dist_favor_compra = st.number_input("Distorção mínima COMPRA (%) - A Favor", value=0.5)
-                    dist_favor_venda = st.number_input("Distorção mínima VENDA (%) - A Favor", value=0.5)
+                    dist_favor_compra = st.number_input("Distorção mínima COMPRA (%) - A Favor", value=0.1)
+                    dist_favor_venda = st.number_input("Distorção mínima VENDA (%) - A Favor", value=0.1)
                 else:
                     dist_favor_compra = dist_favor_venda = 0.0
                 if modo_estrategia in ["Contra Tendência", "Ambos"]:
-                    dist_compra_contra = st.number_input("Distorção mínima COMPRA (%) - Contra", value=0.3)
-                    dist_venda_contra = st.number_input("Distorção mínima VENDA (%) - Contra", value=0.3)
+                    dist_compra_contra = st.number_input("Distorção mínima COMPRA (%) - Contra", value=0.1)
+                    dist_venda_contra = st.number_input("Distorção mínima VENDA (%) - Contra", value=0.1)
                 else:
                     dist_compra_contra = dist_venda_contra = 0.0
                 referencia = st.selectbox(
